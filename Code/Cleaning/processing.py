@@ -12,9 +12,9 @@ def create_dataframe():
     """
     rows = []
     for id_file in tqdm(range(1, 14)):
-        file_path = "./../Data/Original_data/" + str(id_file) + ".json"
+        file_path = "../../Data/Original_data/" + str(id_file) + ".json"
 
-        with open(file_path, encoding='utf-8') as f:
+        with open(file_path) as f:
             data = json.load(f)  # data is a list of dict of the form: {'text':['...'], 'uri':['...']}
             
             print("Extracting text from {} documents in file '{}.json'...".format(len(data), id_file))
@@ -55,7 +55,7 @@ def sent_cleaning(list_sent):
     list_sent = [sent.split(maxsplit=1)[1] if (sent.split(maxsplit=1)[0].isdigit() and len(sent.split(maxsplit=1)) > 1) else sent for sent in list_sent]
     
     # If line begins with a special char, remove that char
-    spec_char = set(',?;.:/=+%`¨^*$€-_())°!§\'\"&@#~®†ºπ‡¬≈©◊~∞µ…÷≠<>')
+    spec_char = set(',?;.:/=+%`¨*$€-_())°!§\'\"&@#~®†ºπ‡¬≈©◊~∞µ…÷≠<>^')
     list_sent = [sent.split(maxsplit=1)[1] if (len(sent.split(maxsplit=1)) > 1 and sent[0] in spec_char) else sent for sent in list_sent]
     
     # Keep only sentences that have less that 15 special characters
@@ -90,7 +90,7 @@ def save_sentences(df):
     """
     """
     final_text = "\n\n".join(df["Text"])
-    with open("../Data/output.txt", "w+") as f:
+    with open("../../Data/output.txt", "w+") as f:
         f.write(final_text)
 
 
