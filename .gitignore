@@ -1,4 +1,6 @@
 Data/*
+Code/bert-master/models/*
+*.zip
 *.json
 *.txt
 .ipynb_checkpoints
