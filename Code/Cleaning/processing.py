@@ -109,7 +109,6 @@ if __name__ == "__main__":
     for id_file in tqdm(range(1, 14)):
         print("Creating dataframe for file '{}.json'...".format(id_file))
         df = create_dataframe(id_file)
-        df = df.head()
         print("Dataframe created with a total of {} documents.".format(len(df.index)))
 
         print("Cleaning corpus of text...")
