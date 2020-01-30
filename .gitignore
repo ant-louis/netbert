@@ -1,10 +1,5 @@
 Data/*
 Code/bert/models/*
 Code/bert/pretraining_output/*
-*.ckpt
-*.zip
-*.json
-*.txt
 .ipynb_checkpoints
-*.csv
 .DS_Store
