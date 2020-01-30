@@ -1,5 +1,7 @@
 Data/*
-Code/bert-master/models/*
+Code/bert/models/*
+Code/bert/pretraining_output/*
+*.ckpt
 *.zip
 *.json
 *.txt
