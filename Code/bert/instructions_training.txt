@@ -12,7 +12,7 @@ NB: This script stores all of the examples for the entire input file in memory, 
 NB2: The max_predictions_per_seq is the maximum number of masked LM predictions per sequence. You should set this to around max_seq_length * masked_lm_prob (the script doesn't do that automatically because the exact value needs to be passed to both scripts).
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 python create_pretraining_data.py \
-  --input_file=/home/antoloui/Master-thesis/Data/preprocessed_text_for_bert.txt \
+  --input_file=/home/antoloui/Master-thesis/Data/Preprocessed/output.txt \
   --output_file=/home/antoloui/Master-thesis/Data/bert/tf_examples.tfrecord \
   --vocab_file=./models/base_cased/vocab.txt \
   --do_lower_case=False \

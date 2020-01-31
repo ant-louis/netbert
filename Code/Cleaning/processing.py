@@ -15,7 +15,7 @@ def create_dataframe(id_file):
     Load all json files and create dataframe.
     """
     rows = []
-    file_path = "../../Data/Original_data/" + str(id_file) + ".json"
+    file_path = "../../Data/Original/" + str(id_file) + ".json"
 
     with open(file_path) as f:
         data = json.load(f)  # data is a list of dict of the form: {'text':['...'], 'uri':['...']}
@@ -95,12 +95,13 @@ def process_sentences(df):
     return df
 
 
-def save_sentences(df):
+def save_sentences(df, id_file):
     """
     """
     sentences = "\n\n".join(df["Text"])
-    with open("../../Data/output.txt", "a+") as f:
-        f.write("\n\n" + sentences)
+    output_file = "../../Data/Preprocessed/text_" + str(id_file) + ".txt"
+    with open(output_file, "w+") as f:
+        f.write(sentences)
 
 
 
@@ -119,7 +120,7 @@ if __name__ == "__main__":
         df = process_sentences(df)
         print("Done !")
 
-        print("Appending sentences to output file...")
-        save_sentences(df)
+        print("Saving sentences to output file...")
+        save_sentences(df, id_file)
         print("Done !")
    
