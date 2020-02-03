@@ -1,6 +1,8 @@
 import os
-from tqdm import tqdm
+import time
 import argparse
+from multiprocessing import Process
+
 
 
 def parse_arguments():
@@ -16,15 +18,13 @@ def parse_arguments():
     return arguments
 
 
-
-def run(args):
+        
+def run_proc(file_id):
     """
+    Run one process (create pretraining data from one txt file).
     """
-    directory = '/home/antoloui/Master-thesis/Data/'
-    
-    if args.all:
-        for i in tqdm(range(1,14)):
-            command = '''\
+    directory = '/raid/antoloui/Master-thesis/Data/'
+    command = '''\
                 python create_pretraining_data.py \
                 --input_file={in_filepath} \
                 --output_file={out_filepath} \
@@ -35,27 +35,33 @@ def run(args):
                 --masked_lm_prob=0.15 \
                 --random_seed=12345 \
                 --dupe_factor=5
-            '''.format(in_filepath=directory+'Preprocessed/text_'+str(i)+'.txt', out_filepath=directory+'bert/tf_examples.tfrecord'+str(i))
-            os.system(command)
+            '''.format(in_filepath=directory+'Preprocessed/text_'+str(file_id)+'.txt', out_filepath=directory+'bert/tf_examples.tfrecord'+str(file_id))
+    os.system(command)
     
+
+
+def main(args):
+    """
+    Run processes in parallel if --all=True, otherwise run one process.
+    """
+    if args.all:
+        # Instantiating process with arguments
+        process_list = [Process(target=run_proc, args=(str(i),)) for i in range(1,14)]
+        for i, p in enumerate(process_list):
+            print('Process {} is starting...'.format(i))
+            p.start()
+            time.sleep(1)
+
+        # Complete the processes
+        for p in process_list:
+            p.join()
+            
     else:
         i = args.file_id
-        command = '''\
-            python create_pretraining_data.py \
-            --input_file={in_filepath} \
-            --output_file={out_filepath} \
-            --vocab_file=./models/base_cased/vocab.txt \
-            --do_lower_case=False \
-            --max_seq_length=128 \
-            --max_predictions_per_seq=20 \
-            --masked_lm_prob=0.15 \
-            --random_seed=12345 \
-            --dupe_factor=5
-            '''.format(in_filepath=directory+'Preprocessed/text_'+str(i)+'.txt', out_filepath=directory+'bert/tf_examples.tfrecord'+str(i))
-        os.system(command)
+        run_proc(i)
         
         
         
 if __name__=="__main__":
     args = parse_arguments()
-    run(args)
+    main(args)
