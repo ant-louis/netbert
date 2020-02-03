@@ -25,25 +25,24 @@ def create_email(output, pwd):
     print("Connected!")
     
     # Content of email
-    sent_from = 'training.aimodel@gmail.com'
-    to = ['ant.louis@protonmail.com']
+    sender = 'training.aimodel@gmail.com'
+    receivers = ['ant.louis@protonmail.com']
     subject = 'Process terminates.'
-    body = 'Process terminates with message:\n' + output + '\n\n Best\n Antoine'
-    content = """\
+    message = 'Process terminates with message:\n' + output + '\n\n Best\n Antoine'
+    email = """\
     From: %s
     To: %s
     Subject: %s
 
     %s
-    """ % (sent_from, ", ".join(to), subject, body)
+    """ % (sender, ", ".join(receivers), subject, message)
     
     # Send email
     print("Sending email...")
-    server.sendmail('training.aimodel@gmail.com','ant.louis@protonmail.com', content) 
+    server.sendmail(sender, receivers, email) 
     server.close()
     print("Sent!")
     
-
 
 def main(args):
     """
