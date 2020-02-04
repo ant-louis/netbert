@@ -7,13 +7,13 @@ Here's how to run the data generation:
 - Documents are delimited by empty lines. 
 - The output is a set of tf.train.Examples serialized into TFRecord file format.
 
-NB: This script stores all of the examples for the entire input file in memory, so for large data files you should shard the input file and call the script multiple times. (You can pass in a file glob to run_pretraining.py, e.g., tf_examples.tf_record*.)
+NB: This script stores all of the examples for the entire input file in memory, so for large data files you should shard the input file and call the script multiple times. (You can pass in a file glob to run_pretraining.py, e.g., tf_examples.tfrecord*.)
 
 NB2: The max_predictions_per_seq is the maximum number of masked LM predictions per sequence. You should set this to around max_seq_length * masked_lm_prob (the script doesn't do that automatically because the exact value needs to be passed to both scripts).
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 python create_pretraining_data.py \
   --input_file=/raid/antoloui/Master-thesis/Data/Preprocessed/output.txt \
-  --output_file=/raid/antoloui/Master-thesis/Data/bert/tf_examples.tfrecord \
+  --output_file=/raid/antoloui/Master-thesis/Data/bert/test/tf_examples.tfrecord \
   --vocab_file=./models/base_cased/vocab.txt \
   --do_lower_case=False \
   --max_seq_length=128 \
@@ -35,7 +35,25 @@ NB: One good recipe is to pre-train for, say, 90,000 steps with a sequence lengt
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 python run_pretraining.py \
-  --input_file=/raid/antoloui/Master-thesis/Data/bert/tf_examples.tfrecord \
+  --input_file=/raid/antoloui/Master-thesis/Data/bert/tf_examples.tfrecord* \
+  --output_dir=/raid/antoloui/Master-thesis/Code/bert/pretraining_output_fullfat \
+  --do_train=True \
+  --do_eval=False \
+  --bert_config_file=./models/base_cased/bert_config.json \
+  --init_checkpoint=./models/base_cased/bert_model.ckpt \
+  --train_batch_size=32 \
+  --max_seq_length=128 \
+  --max_predictions_per_seq=20 \
+  --num_train_steps=90000 \
+  --num_warmup_steps=1000 \
+  --learning_rate=2e-5
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+python run_pretraining.py \
+  --input_file=/raid/antoloui/Master-thesis/Data/bert/test/tf_examples.tfrecord* \
   --output_dir=/raid/antoloui/Master-thesis/Code/bert/pretraining_output \
   --do_train=True \
   --do_eval=True \

@@ -1,5 +1,5 @@
 Data/*
 Code/bert/models/*
-Code/bert/pretraining_output/*
+Code/bert/pretraining_output_fullfat/*
 .ipynb_checkpoints
 .DS_Store
