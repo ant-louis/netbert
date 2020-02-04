@@ -1,4 +1,4 @@
-# coding=utf-8
+        # coding=utf-8
 # Copyright 2018 The Google AI Language Team Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -211,6 +211,12 @@ def model_fn_builder(bert_config, init_checkpoint, learning_rate,
             labels=next_sentence_labels, predictions=next_sentence_predictions)
         next_sentence_mean_loss = tf.metrics.mean(
             values=next_sentence_example_loss)
+        
+        # For tensorboard
+        tf_masked_lm_accuracy_summary = tf.summary.scalar('masked_lm_accuracy', masked_lm_accuracy)
+        tf_masked_lm_mean_loss_summary = tf.summary.scalar('masked_lm_mean_loss', masked_lm_mean_loss)
+        tf_next_sentence_accuracy_summary = tf.summary.scalar('next_sentence_accuracy', next_sentence_accuracy)
+        tf_next_sentence_loss_summary = tf.summary.scalar('next_sentence_loss', next_sentence_loss)
         
         return {
             "masked_lm_accuracy": masked_lm_accuracy,
