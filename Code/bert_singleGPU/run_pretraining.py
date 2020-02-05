@@ -22,6 +22,9 @@ import os
 import modeling
 import optimization
 import tensorflow as tf
+import logging
+
+os.environ['CUDA_VISIBLE_DEVICES']='0' # Make only one GPU visible
 
 flags = tf.flags
 
@@ -176,11 +179,13 @@ def model_fn_builder(bert_config, init_checkpoint, learning_rate,
     if mode == tf.estimator.ModeKeys.TRAIN:
       train_op = optimization.create_optimizer(
           total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
-
+      
+      logging_hook = tf.train.LoggingTensorHook({"Total loss": total_loss}, every_n_iter=10) 
       output_spec = tf.contrib.tpu.TPUEstimatorSpec(
           mode=mode,
           loss=total_loss,
           train_op=train_op,
+          training_hooks=[logging_hook],
           scaffold_fn=scaffold_fn)
     elif mode == tf.estimator.ModeKeys.EVAL:
 
