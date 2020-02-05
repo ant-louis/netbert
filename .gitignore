@@ -1,5 +1,7 @@
 Data/*
-Code/bert/models/*
-Code/bert/pretraining_output_fullfat/*
+Code/bert_singleGPU/models/*
+Code/bert_singleGPU/pretraining_output_fullfat/*
+Code/bert_multiGPU/bert_horodov/models/*
+Code/bert_singleGPU/bert_horodov/pretraining_output_fullfat/*
 .ipynb_checkpoints
 .DS_Store
