@@ -36,6 +36,11 @@
 - Re-attach to this session: screen -r name
 - List the sessions: screen -ls
 
+## Checking activity
+
+- GPU: watch -n0.1 nvidia-smi
+- CPU: top
+
 
 ## Size of data
 
