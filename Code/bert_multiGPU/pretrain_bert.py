@@ -43,9 +43,10 @@ from utils import print_rank_0
 from utils import enable_adlr_autoresume
 from utils import check_adlr_autoresume_termination
 
-##-Added---------------------
-os.environ['CUDA_VISIBLE_DEVICES']='0' # Make only one GPU visible
-##---------------------
+##-Added-------------------------------------------
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]="1,2,3,4,5,6,7" # specify which GPU(s) to be used
+##-------------------------------------------------
 
 def get_model(args):
     """Build the model."""

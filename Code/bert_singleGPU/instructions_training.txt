@@ -34,41 +34,16 @@ Here's how to run the pre-training:
 NB: One good recipe is to pre-train for, say, 90,000 steps with a sequence length of 128 and then for 10,000 additional steps with a sequence length of 512. !!Note that this does require generating the data twice with different values of max_seq_length.!! Also note that wit ha sequence length of 512 I should change my train_batch_size to 6.
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# From Google repository
-------------------------
 python run_pretraining.py \
   --input_file=../../Data/bert/L128/tf_examples.tfrecord* \
-  --output_dir=./pretraining_output_fullfat \
+  --output_dir=./pretraining_output_megafat \
   --do_train=True \
   --do_eval=False \
   --bert_config_file=./models/base_cased/bert_config.json \
   --init_checkpoint=./models/base_cased/bert_model.ckpt \
-  --train_batch_size=64 \
+  --train_batch_size=128 \
   --max_seq_length=128 \
   --max_predictions_per_seq=20 \
-  --num_train_steps=90000 \
-  --num_warmup_steps=1000 \
-  --learning_rate=2e-5 |& tee -a pretraining_output_fullfat/info.txt
-
-
-
-# From Horovod repository (doesn't work yet)
--------------------------
-mpirun -np 8 \
-    -H localhost:8 \
-    -bind-to none -map-by slot \
-    -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH \
-    -mca pml ob1 -mca btl ^openib \
-    python run_pretraining_hvd.py \
-    --input_file=../../Data/bert/tf_examples.tfrecord* \
-    --output_dir=./pretraining_output_fullfat \
-    --do_train=True \
-    --do_eval=False \
-    --bert_config_file=./models/base_cased/bert_config.json \
-    --init_checkpoint=./models/base_cased/bert_model.ckpt \
-    --train_batch_size=32 \
-    --max_seq_length=128 \
-    --max_predictions_per_seq=20 \
-    --num_train_steps=20 \
-    --num_warmup_steps=10 \
-    --learning_rate=2e-5
+  --num_train_steps=1615550 \
+  --num_warmup_steps=10 \
+  --learning_rate=2e-5 |& tee -a pretraining_output_megafat/info.txt
