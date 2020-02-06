@@ -2,5 +2,6 @@ Data/*
 Code/bert_singleGPU/models/*
 Code/bert_singleGPU/pretraining_output_fullfat/*
 Code/bert_multiGPU/models/*
+Code/bert_multiGPU/cache/*
 .ipynb_checkpoints
 .DS_Store

@@ -90,19 +90,42 @@ def make_tfrecord_loaders(args):
                      }
     train = data_utils.tf_dl.TFRecordDataLoader(args.train_data,
                                                 **data_set_args)
+    
+    ##-Added-------------------------------------
+    if train is not None and args.batch_size > 0:
+        args.do_train = True
+    else:
+        args.do_train = False
+    ##--------------------------------------------
+    
     data_set_args['train'] = False
     if args.eval_seq_length is not None:
         data_set_args['max_seq_len'] = args.eval_seq_length
     if args.eval_max_preds_per_seq is not None:
         data_set_args['max_preds_per_seq'] = args.eval_max_preds_per_seq
+    
     valid = None
     if args.valid_data is not None:
         valid = data_utils.tf_dl.TFRecordDataLoader(args.valid_data,
                                                     **data_set_args)
+    ##-Added-------------------------------------
+    if valid is not None:
+        args.do_valid = True
+    else:
+        args.do_valid = False
+    ##--------------------------------------------
+    
     test = None
     if args.test_data is not None:
         test = data_utils.tf_dl.TFRecordDataLoader(args.test_data,
                                                    **data_set_args)
+    ##-Added-------------------------------------
+    if valid is not None:
+        args.do_test = True
+    else:
+        args.do_test = False
+    ##--------------------------------------------
+    
     tokenizer = data_utils.make_tokenizer(args.tokenizer_type,
                                           train,
                                           args.tokenizer_path,

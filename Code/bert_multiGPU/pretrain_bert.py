@@ -43,6 +43,10 @@ from utils import print_rank_0
 from utils import enable_adlr_autoresume
 from utils import check_adlr_autoresume_termination
 
+##-Added---------------------
+os.environ['CUDA_VISIBLE_DEVICES']='0' # Make only one GPU visible
+##---------------------
+
 def get_model(args):
     """Build the model."""
 
@@ -185,7 +189,7 @@ def get_batch(data_iterator, timers):
     '''
     # Items and their type.
     keys = ['text', 'types', 'is_random', 'mask', 'mask_labels', 'pad_mask']
-    datatype = torch.int64
+    datatype = torch.int32 ##int64
 
     # Broadcast data.
     timers('data loader').start()
@@ -557,7 +561,6 @@ def main():
 
     # Arguments.
     args = get_args()
-    print(args)
 
     writer = None
     if args.tensorboard_dir and args.rank == 0:
@@ -591,7 +594,7 @@ def main():
     # Model, optimizer, and learning rate.
     model, optimizer, lr_scheduler = setup_model_and_optimizer(args)
 
-    if args.resume_dataloader:
+    if args.resume_dataloader:  ## Does not apply to tfrecords dataloader, try resuming with a different seed in this case.
         if train_data is not None:
             train_data.batch_sampler.start_iter = args.iteration % \
                                                   len(train_data)
