@@ -12,23 +12,21 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $
 
 python -m torch.distributed.launch $DISTRIBUTED_ARGS \
        pretrain_bert.py \
+       --pretrained-bert \
        --num-layers 12 \
        --hidden-size 768 \
        --num-attention-heads 12 \
-       --batch-size 32 \
+       --batch-size 6 \
        --seq-length 128 \
        --max-preds-per-seq 20 \
        --max-position-embeddings 128 \
-       --train-iters 1000000 \
+       --train-iters 1000 \
        --save models/base_cased/bert_model \
-       --load models/base_cased/bert_model \
-       --resume-dataloader \
        --use-tfrecords \
-       --train-data /raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord8 /raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord13 \
-       --valid-data /raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord3 \
-       --test-data /raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord2 \
+       --train-data /raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord13 \
+       --valid-data /raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord13 \
+       --test-data /raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord13 \
        --tokenizer-type BertWordPieceTokenizer \
-       --pretrained-bert True
        --tokenizer-model-type bert-base-cased \
        --presplit-sentences \
        --cache-dir cache \
@@ -42,4 +40,4 @@ python -m torch.distributed.launch $DISTRIBUTED_ARGS \
        --warmup .01 \
        --fp16 \
        --fp32-layernorm \
-       --fp32-embedding |& tee -a info.txt
+       --fp32-embedding |& tee logs/pretrain_bert_tfrecords_distributed.txt
