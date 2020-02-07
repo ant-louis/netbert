@@ -22,6 +22,7 @@ import time
 import os
 import sys
 import argparse
+from multiprocessing import Process
 
 MIN_DOCUMENT_LENGTH = 128
 
@@ -31,22 +32,21 @@ def parse_arguments():
     Parser.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--in_file", type=str, default="/raid/antoloui/Master-thesis/Data/Original/13.json",
-                        help="Input file.")
-    parser.add_argument("--out_file", type=str, default="/raid/antoloui/Master-thesis/Data/Original/cleaned_13.json",
-                        help="Output file.")
+    parser.add_argument("--file_id", type=int,
+                        help="Id of the input file.")
+    parser.add_argument("--all", type=bool, default=False,
+                        help="Create pretraining data for all files.")
     arguments, _ = parser.parse_known_args()
     return arguments
 
 
 
-def print_progress(prefix, start_time, num_docs, num_written_docs, num_fixed_text,
+def save_result(file_id, start_time, num_docs, num_written_docs, num_fixed_text,
                    num_non_english_docs, chars_non_english_docs,
                    num_small_docs, chars_small_docs):
     """
     """
-    string = prefix + ' | '
-    string += 'elapsed time: {:.2f} | '.format(time.time() - start_time)
+    string = 'elapsed time: {:.2f} | '.format(time.time() - start_time)
     string += 'documents: {} | '.format(num_docs)
     string += 'written documents: {} | '.format(num_written_docs)
     string += 'fixed text: {} | '.format(num_fixed_text)
@@ -54,14 +54,20 @@ def print_progress(prefix, start_time, num_docs, num_written_docs, num_fixed_tex
     string += 'non-english chars: {} | '.format(chars_non_english_docs)
     string += 'small docs: {} | '.format(num_small_docs)
     string += 'small docs chars: {}'.format(chars_small_docs)
-    print(string, flush=True)
+    
+    filename = '/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/info_' + str(file_id) + '.txt'
+    with open(filename, "w") as text_file:
+        text_file.write(string)
 
 
     
-def filter_corpus(in_filename, out_filename, print_interval=10000):
+def filter_corpus(file_id):
     """
     """
-    print(' > Filtering {}...'.format(in_filename))
+    directory = '/raid/antoloui/Master-thesis/Data/'
+    in_filename = directory + 'Original/' + str(file_id) + '.json'
+    out_filename = directory + 'Cleaned/New_cleaning/' + str(file_id) + '.json'
+    
     num_docs = 0
     num_written_docs = 0
     num_small_docs = 0
@@ -105,19 +111,37 @@ def filter_corpus(in_filename, out_filename, print_interval=10000):
                 myjson = json.dumps(doc, ensure_ascii=False)
                 f_out.write(myjson.encode('utf-8'))
                 f_out.write('\n'.encode('utf-8'))
-                num_written_docs += 1
-                if num_docs % print_interval == 0:
-                    print_progress('[PROGRESS]', start_time, num_docs, num_written_docs,
-                                    num_fixed_text, num_non_english_docs,
-                                    chars_non_english_docs,
-                                    num_small_docs, chars_small_docs)      
+                num_written_docs += 1     
                                          
-    print_progress('[FINAL]', start_time, num_docs, num_written_docs,
-                   num_fixed_text, num_non_english_docs,
-                   chars_non_english_docs,
-                   num_small_docs, chars_small_docs)
+    save_result(file_id, start_time, num_docs, num_written_docs,
+                num_fixed_text, num_non_english_docs,
+                chars_non_english_docs,
+                num_small_docs, chars_small_docs)
+    
+
+def main(args):
+    """
+    """
+    """
+    Run processes in parallel if --all=True, otherwise run one process.
+    """
+    if args.all:
+        # Instantiating process with arguments
+        process_list = [Process(target=filter_corpus, args=(str(i),)) for i in range(1,14)]
+        for i, p in enumerate(process_list):
+            print('Process {} is starting...'.format(i+1))
+            p.start()
+            time.sleep(1)
+
+        # Complete the processes
+        for p in process_list:
+            p.join()
+            
+    else:
+        i = args.file_id
+        filter_corpus(i)
                 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    filter_corpus(args.in_file, args.out_file)
+    main(args)
