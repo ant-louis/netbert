@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: lsh
+Version: 0.3.0
+Summary: A library for performing shingling and LSH for python.
+Home-page: https://github.com/mattilyra/lsh
+Author: Matti Lyra
+Author-email: matti.lyra@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
