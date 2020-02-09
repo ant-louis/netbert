@@ -92,7 +92,7 @@ arguments:
   valid_data ................... ['/raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord13']
   split ........................ 949,50,1
   test_data .................... ['/raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord13']
-  lazy_loader .................. True
+  lazy_loader .................. False
   loose_json ................... False
   presplit_sentences ........... True
   num_workers .................. 2
@@ -138,39 +138,39 @@ WARNING:tensorflow:From /raid/antoloui/Master-thesis/Code/bert_multiGPU/data_uti
 
 WARNING:tensorflow:From /raid/antoloui/Master-thesis/Code/bert_multiGPU/data_utils/tf_dl.py:32: The name tf.FixedLenFeature is deprecated. Please use tf.io.FixedLenFeature instead.
 
-2020-02-09 14:54:00.194818: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcuda.so.1
-2020-02-09 14:54:00.196419: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1640] Found device 0 with properties: 
-name: Tesla P100-SXM2-16GB major: 6 minor: 0 memoryClockRate(GHz): 1.4805
-pciBusID: 0000:07:00.0
-2020-02-09 14:54:00.196458: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcudart.so.9.0
-2020-02-09 14:54:00.196504: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcublas.so.9.0
-2020-02-09 14:54:00.196546: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcufft.so.9.0
-2020-02-09 14:54:00.196568: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcurand.so.9.0
-2020-02-09 14:54:00.197974: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcusolver.so.9.0
-2020-02-09 14:54:00.198014: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcusparse.so.9.0
-2020-02-09 14:54:00.201608: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcudnn.so.7
-2020-02-09 14:54:00.204216: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1763] Adding visible gpu devices: 0
-2020-02-09 14:54:00.204528: I tensorflow/core/platform/cpu_feature_guard.cc:142] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 FMA
-2020-02-09 14:54:00.226723: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 2195090000 Hz
-2020-02-09 14:54:00.232681: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x5572924fa7f0 executing computations on platform Host. Devices:
-2020-02-09 14:54:00.232752: I tensorflow/compiler/xla/service/service.cc:175]   StreamExecutor device (0): <undefined>, <undefined>
-2020-02-09 14:54:00.234300: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1640] Found device 0 with properties: 
-name: Tesla P100-SXM2-16GB major: 6 minor: 0 memoryClockRate(GHz): 1.4805
-pciBusID: 0000:07:00.0
-2020-02-09 14:54:00.234324: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcudart.so.9.0
-2020-02-09 14:54:00.234333: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcublas.so.9.0
-2020-02-09 14:54:00.234342: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcufft.so.9.0
-2020-02-09 14:54:00.234350: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcurand.so.9.0
-2020-02-09 14:54:00.234386: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcusolver.so.9.0
-2020-02-09 14:54:00.234433: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcusparse.so.9.0
-2020-02-09 14:54:00.234448: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcudnn.so.7
-2020-02-09 14:54:00.236994: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1763] Adding visible gpu devices: 0
-2020-02-09 14:54:00.237138: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1181] Device interconnect StreamExecutor with strength 1 edge matrix:
-2020-02-09 14:54:00.237148: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1187]      0 
-2020-02-09 14:54:00.237157: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1200] 0:   N 
-2020-02-09 14:54:00.241291: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1326] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 14817 MB memory) -> physical GPU (device: 0, name: Tesla P100-SXM2-16GB, pci bus id: 0000:07:00.0, compute capability: 6.0)
-2020-02-09 14:54:00.243327: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x55729256d750 executing computations on platform CUDA. Devices:
-2020-02-09 14:54:00.243345: I tensorflow/compiler/xla/service/service.cc:175]   StreamExecutor device (0): Tesla P100-SXM2-16GB, Compute Capability 6.0
+2020-02-06 16:10:27.712297: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcuda.so.1
+2020-02-06 16:10:27.824323: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1640] Found device 0 with properties: 
+name: Tesla V100-SXM2-32GB major: 7 minor: 0 memoryClockRate(GHz): 1.53
+pciBusID: 0000:1b:00.0
+2020-02-06 16:10:27.824411: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcudart.so.10.1
+2020-02-06 16:10:27.824489: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcublas.so.10
+2020-02-06 16:10:27.824539: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcufft.so.10
+2020-02-06 16:10:27.824590: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcurand.so.10
+2020-02-06 16:10:27.828561: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcusolver.so.10
+2020-02-06 16:10:27.828656: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcusparse.so.10
+2020-02-06 16:10:27.836811: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcudnn.so.7
+2020-02-06 16:10:27.842750: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1763] Adding visible gpu devices: 0
+2020-02-06 16:10:27.843122: I tensorflow/core/platform/cpu_feature_guard.cc:142] Your CPU supports instructions that this TensorFlow binary was not compiled to use: SSE4.1 SSE4.2 AVX AVX2 AVX512F FMA
+2020-02-06 16:10:27.907989: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 2500000000 Hz
+2020-02-06 16:10:27.918852: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x5591518b8250 executing computations on platform Host. Devices:
+2020-02-06 16:10:27.918911: I tensorflow/compiler/xla/service/service.cc:175]   StreamExecutor device (0): <undefined>, <undefined>
+2020-02-06 16:10:27.922926: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1640] Found device 0 with properties: 
+name: Tesla V100-SXM2-32GB major: 7 minor: 0 memoryClockRate(GHz): 1.53
+pciBusID: 0000:1b:00.0
+2020-02-06 16:10:27.922984: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcudart.so.10.1
+2020-02-06 16:10:27.923008: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcublas.so.10
+2020-02-06 16:10:27.923027: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcufft.so.10
+2020-02-06 16:10:27.923046: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcurand.so.10
+2020-02-06 16:10:27.923082: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcusolver.so.10
+2020-02-06 16:10:27.923104: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcusparse.so.10
+2020-02-06 16:10:27.923131: I tensorflow/stream_executor/platform/default/dso_loader.cc:42] Successfully opened dynamic library libcudnn.so.7
+2020-02-06 16:10:27.929648: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1763] Adding visible gpu devices: 0
+2020-02-06 16:10:27.929824: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1181] Device interconnect StreamExecutor with strength 1 edge matrix:
+2020-02-06 16:10:27.929840: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1187]      0 
+2020-02-06 16:10:27.929848: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1200] 0:   N 
+2020-02-06 16:10:27.939402: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1326] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 29941 MB memory) -> physical GPU (device: 0, name: Tesla V100-SXM2-32GB, pci bus id: 0000:1b:00.0, compute capability: 7.0)
+2020-02-06 16:10:27.943076: I tensorflow/compiler/xla/service/service.cc:168] XLA service 0x559151928f80 executing computations on platform CUDA. Devices:
+2020-02-06 16:10:27.943122: I tensorflow/compiler/xla/service/service.cc:175]   StreamExecutor device (0): Tesla V100-SXM2-32GB, Compute Capability 7.0
 WARNING:tensorflow:From /home/antoloui/anaconda3/envs/tf/lib/python3.6/site-packages/tensorflow/python/data/util/random_seed.py:58: add_dispatch_support.<locals>.wrapper (from tensorflow.python.ops.array_ops) is deprecated and will be removed in a future version.
 Instructions for updating:
 Use tf.where in 2.0, which has the same broadcast rule as np.where
@@ -188,7 +188,7 @@ Use `tf.data.experimental.parallel_interleave(...)`.
 WARNING:tensorflow:From /home/antoloui/anaconda3/envs/tf/lib/python3.6/site-packages/tensorflow/contrib/data/python/ops/interleave_ops.py:77: parallel_interleave (from tensorflow.python.data.experimental.ops.interleave_ops) is deprecated and will be removed in a future version.
 Instructions for updating:
 Use `tf.data.Dataset.interleave(map_func, cycle_length, block_length, num_parallel_calls=tf.data.experimental.AUTOTUNE)` instead. If sloppy execution is desired, use `tf.data.Options.experimental_determinstic`.
-2020-02-09 14:54:01.428838: W tensorflow/core/common_runtime/eager/context.cc:371] Added two functions with the same name: __inference_Dataset_flat_map_read_one_file_27
+2020-02-06 16:10:29.620904: W tensorflow/core/common_runtime/eager/context.cc:371] Added two functions with the same name: __inference_Dataset_flat_map_read_one_file_27
 WARNING:tensorflow:From /raid/antoloui/Master-thesis/Code/bert_multiGPU/data_utils/tf_dl.py:61: map_and_batch (from tensorflow.contrib.data.python.ops.batching) is deprecated and will be removed in a future version.
 Instructions for updating:
 Use `tf.data.experimental.map_and_batch(...)`.
@@ -207,51 +207,22 @@ loaded bert-base-cased
 building BERT model ...
  > number of parameters on model parallel rank 0: 108932934
 learning rate decaying linear
+IT's GONNA CRASH NOW
+Wait no...
+IT's GONNA CRASH NOW
 Traceback (most recent call last):
-  File "pretrain_bert.py", line 651, in <module>
+  File "pretrain_bert.py", line 650, in <module>
     main()
-  File "pretrain_bert.py", line 628, in main
+  File "pretrain_bert.py", line 627, in main
     timers, args, writer)
-  File "pretrain_bert.py", line 336, in train
+  File "pretrain_bert.py", line 335, in train
     args, timers)
-  File "pretrain_bert.py", line 289, in train_step
+  File "pretrain_bert.py", line 288, in train_step
     args, timers)
-  File "pretrain_bert.py", line 225, in forward_step
-    checkpoint_activations=args.checkpoint_activations)
-  File "/home/antoloui/anaconda3/envs/tf/lib/python3.6/site-packages/torch/nn/modules/module.py", line 493, in __call__
-    result = self.forward(*input, **kwargs)
-  File "/raid/antoloui/Master-thesis/Code/bert_multiGPU/model/distributed.py", line 78, in forward
-    return self.module(*inputs, **kwargs)
-  File "/home/antoloui/anaconda3/envs/tf/lib/python3.6/site-packages/torch/nn/modules/module.py", line 493, in __call__
-    result = self.forward(*input, **kwargs)
-  File "/raid/antoloui/Master-thesis/Code/bert_multiGPU/fp16/fp16.py", line 65, in forward
-    return fp16_to_fp32(self.module(*(fp32_to_fp16(inputs)), **kwargs))
-  File "/home/antoloui/anaconda3/envs/tf/lib/python3.6/site-packages/torch/nn/modules/module.py", line 493, in __call__
-    result = self.forward(*input, **kwargs)
-  File "/raid/antoloui/Master-thesis/Code/bert_multiGPU/model/model.py", line 82, in forward
-    checkpoint_activations=checkpoint_activations)
-  File "/home/antoloui/anaconda3/envs/tf/lib/python3.6/site-packages/torch/nn/modules/module.py", line 493, in __call__
-    result = self.forward(*input, **kwargs)
-  File "/raid/antoloui/Master-thesis/Code/bert_multiGPU/model/modeling.py", line 944, in forward
-    output_all_encoded_layers=False, checkpoint_activations=checkpoint_activations)
-  File "/home/antoloui/anaconda3/envs/tf/lib/python3.6/site-packages/torch/nn/modules/module.py", line 493, in __call__
-    result = self.forward(*input, **kwargs)
-  File "/raid/antoloui/Master-thesis/Code/bert_multiGPU/model/modeling.py", line 873, in forward
-    checkpoint_activations=checkpoint_activations)
-  File "/home/antoloui/anaconda3/envs/tf/lib/python3.6/site-packages/torch/nn/modules/module.py", line 493, in __call__
-    result = self.forward(*input, **kwargs)
-  File "/raid/antoloui/Master-thesis/Code/bert_multiGPU/model/modeling.py", line 533, in forward
-    hidden_states = layer_module(hidden_states, attention_mask)
-  File "/home/antoloui/anaconda3/envs/tf/lib/python3.6/site-packages/torch/nn/modules/module.py", line 493, in __call__
-    result = self.forward(*input, **kwargs)
-  File "/raid/antoloui/Master-thesis/Code/bert_multiGPU/model/modeling.py", line 490, in forward
-    attention_output = self.attention(hidden_states, attention_mask)
-  File "/home/antoloui/anaconda3/envs/tf/lib/python3.6/site-packages/torch/nn/modules/module.py", line 493, in __call__
-    result = self.forward(*input, **kwargs)
-  File "/raid/antoloui/Master-thesis/Code/bert_multiGPU/model/modeling.py", line 423, in forward
-    self_output = self.self(input_tensor, attention_mask)
-  File "/home/antoloui/anaconda3/envs/tf/lib/python3.6/site-packages/torch/nn/modules/module.py", line 493, in __call__
-    result = self.forward(*input, **kwargs)
-  File "/raid/antoloui/Master-thesis/Code/bert_multiGPU/mpu/transformer.py", line 513, in forward
-    key_layer.transpose(-1, -2)/norm_factor)
-RuntimeError: CUDA out of memory. Tried to allocate 2.00 MiB (GPU 0; 15.89 GiB total capacity; 629.00 MiB already allocated; 1.38 MiB free; 33.00 MiB cached)
+  File "pretrain_bert.py", line 231, in forward_step
+    output.contiguous().float(), lm_labels.contiguous())
+  File "/raid/antoloui/Master-thesis/Code/bert_multiGPU/mpu/cross_entropy.py", line 111, in vocab_parallel_cross_entropy
+    return _VocabParallelCrossEntropy.apply(vocab_parallel_logits, target)
+  File "/raid/antoloui/Master-thesis/Code/bert_multiGPU/mpu/cross_entropy.py", line 41, in forward
+    exp_logits = logits.exp()
+RuntimeError: CUDA out of memory. Tried to allocate 58.00 MiB (GPU 0; 31.72 GiB total capacity; 1.33 GiB already allocated; 23.88 MiB free; 1.36 GiB reserved in total by PyTorch)

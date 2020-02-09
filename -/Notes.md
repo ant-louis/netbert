@@ -55,7 +55,7 @@
 ## Training
 
 ### Pretraining data
-- Instances:
+- L128:
     + 1: 22 323 943 total instances (17.1765 GB)
     + 2: 1 688 007 total instances (1.2934 GB)
     + 3: 4 536 042 total instances (3.4834 GB)
@@ -69,7 +69,23 @@
     + 11: 28 050 132 total instances (21.5082 GB)
     + 12: 39 272 210 total instances (30.1326 GB)
     + 13: 10 687 total instances (0.0083 GB)
-    + TOTAL: 206 788 265 (158.6615 GB) 
+    + TOTAL: 206 788 265 (158.6615 GB)
+    
+- L512:
+    + 1: 7 308 196 total instances
+    + 2: 679 528 total instances
+    + 3: 1 458 313 total instances
+    + 4: 12 621 399 total instances
+    + 5: 4 596 556 total instances
+    + 6: 4 085 827 total instances
+    + 7: 3 686 578 total instances
+    + 8: 4 689 305 total instances
+    + 9: 3 126 274 total instances
+    + 10: 3 756 145 total instances
+    + 11: 9 233 166 total instances
+    + 12: 12 901 700 total instances
+    + 13: 6399 total instances
+    + TOTAL: 
     
 ## Iterations
     
