@@ -15,6 +15,7 @@ python pretrain_bert.py \
        --train-iters 1000 \
        --save models/base_cased/bert_model \
        --use-tfrecords \
+       --lazy-loader \
        --train-data /raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord13 \
        --valid-data /raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord13 \
        --test-data /raid/antoloui/Master-thesis/Data/bert/L128/tf_examples.tfrecord13 \
