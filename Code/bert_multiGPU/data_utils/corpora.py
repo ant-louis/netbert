@@ -16,43 +16,63 @@
 from .datasets import json_dataset, csv_dataset
 import os
 
-class wikipedia(json_dataset):
-	"""
-	dataset for wikipedia with arguments configured for convenience
 
-	command line usage: `--train-data wikipedia`
-	"""
-	PATH = 'data/wikipedia/wikidump_lines.json'
-	assert_str = "make sure to set PATH for wikipedia data_utils/corpora.py"
-	def __init__(self, **kwargs):
-		assert os.path.exists(wikipedia.PATH), \
+class cisco(json_dataset):
+    """
+    dataset for cisco with arguments configured for convenience
+
+    command line usage: `--train-data cisco`
+    """
+    PATH = '/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/split_cleaned_13.json'
+    assert_str = "make sure to set PATH for cisco data_utils/corpora.py"
+    def __init__(self, **kwargs):
+        assert os.path.exists(cisco.PATH), \
+                        cisco.assert_str
+        if not kwargs:
+            kwargs = {}
+        kwargs['text_key'] = 'text'
+        kwargs['loose_json'] = True
+        super(cisco, self).__init__(cisco.PATH, **kwargs)
+
+
+class wikipedia(json_dataset):
+    """
+    dataset for wikipedia with arguments configured for convenience
+
+    command line usage: `--train-data wikipedia`
+    """
+    PATH = 'data/wikipedia/wikidump_lines.json'
+    assert_str = "make sure to set PATH for wikipedia data_utils/corpora.py"
+    def __init__(self, **kwargs):
+        assert os.path.exists(wikipedia.PATH), \
                         wikipedia.assert_str
-		if not kwargs:
-			kwargs = {}
-		kwargs['text_key'] = 'text'
-		kwargs['loose_json'] = True
-		super(wikipedia, self).__init__(wikipedia.PATH, **kwargs)
+        if not kwargs:
+            kwargs = {}
+            kwargs['text_key'] = 'text'
+        kwargs['loose_json'] = True
+        super(wikipedia, self).__init__(wikipedia.PATH, **kwargs)
 
 
 class webtext(json_dataset):
-	"""
-	dataset for webtext with arguments configured for convenience
+    """
+    dataset for webtext with arguments configured for convenience
 
-	command line usage: `--train-data webtext`
-	"""
-	PATH = 'data/webtext/data.json'
-	assert_str = "make sure to set PATH for webtext data_utils/corpora.py"
-	def __init__(self, **kwargs):
-		assert os.path.exists(webtext.PATH), \
+    command line usage: `--train-data webtext`
+    """
+    PATH = 'data/webtext/data.json'
+    assert_str = "make sure to set PATH for webtext data_utils/corpora.py"
+    def __init__(self, **kwargs):
+        assert os.path.exists(webtext.PATH), \
                         webtext.assert_str
-		if not kwargs:
-			kwargs = {}
-		kwargs['text_key'] = 'text'
-		kwargs['loose_json'] = True
-		super(webtext, self).__init__(webtext.PATH, **kwargs)
+        if not kwargs:
+            kwargs = {}
+        kwargs['text_key'] = 'text'
+        kwargs['loose_json'] = True
+        super(webtext, self).__init__(webtext.PATH, **kwargs)
 
 
 NAMED_CORPORA = {
-	'wikipedia': wikipedia,
-        'webtext': webtext,
+    'wikipedia': wikipedia,
+    'webtext': webtext,
+    'cisco': cisco,
 }
