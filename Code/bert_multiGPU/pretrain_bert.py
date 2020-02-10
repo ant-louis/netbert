@@ -44,8 +44,8 @@ from utils import enable_adlr_autoresume
 from utils import check_adlr_autoresume_termination
 
 ##-Added-------------------------------------------
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="1" # specify which GPU(s) to be used: ,2,3,4,5,6,7
+#os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+#os.environ["CUDA_VISIBLE_DEVICES"]="0" #"1,2,3,4,5,6,7" # specify which GPU(s) to be used
 ##-------------------------------------------------
 
 def get_model(args):
@@ -190,7 +190,7 @@ def get_batch(data_iterator, timers):
     '''
     # Items and their type.
     keys = ['text', 'types', 'is_random', 'mask', 'mask_labels', 'pad_mask']
-    datatype = torch.int32 ##int64
+    datatype = torch.int64 ##int32
 
     # Broadcast data.
     timers('data loader').start()

@@ -12,24 +12,26 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE --nnodes $NNODES --node_rank $
 
 python -m torch.distributed.launch $DISTRIBUTED_ARGS \
        pretrain_bert.py \
-       --num-layers 24 \
-       --hidden-size 1024 \
-       --num-attention-heads 16 \
-       --batch-size 4 \
-       --seq-length 512 \
-       --max-preds-per-seq 80 \
-       --max-position-embeddings 512 \
+       --batch-size 192 \
        --train-iters 1000000 \
-       --save checkpoints/bert_345m \
-       --load checkpoints/bert_345m \
-       --resume-dataloader \
-       --train-data wikipedia \
+       --train-data cisco \
        --lazy-loader \
-       --tokenizer-type BertWordPieceTokenizer \
-       --tokenizer-model-type bert-large-uncased \
        --presplit-sentences \
+       --pretrained-bert \
+       --tokenizer-type BertWordPieceTokenizer \
+       --tokenizer-model-type bert-base-cased \
+       --save model_checkpoints/base_cased \
+       --load model_checkpoints/base_cased \
+       --save-interval 1000 \
+       --tensorboard-dir ./tensorboard \
        --cache-dir cache \
-       --split 949,50,1 \
+       --num-layers 12 \
+       --hidden-size 768 \
+       --num-attention-heads 12 \
+       --seq-length 128 \
+       --max-preds-per-seq 20 \
+       --max-position-embeddings 128 \
+       --split 939,40,11 \
        --distributed-backend nccl \
        --lr 0.0001 \
        --lr-decay-style linear \
@@ -38,6 +40,4 @@ python -m torch.distributed.launch $DISTRIBUTED_ARGS \
        --clip-grad 1.0 \
        --warmup .01 \
        --fp16 \
-       --fp32-layernorm \
-       --fp32-embedding
-
+       --fp32-embedding |& tee ./model_checkpoints/base_cased/logs.txt

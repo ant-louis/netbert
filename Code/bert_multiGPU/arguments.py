@@ -286,7 +286,7 @@ def add_data_args(parser):
 
     group.add_argument('--delim', default=',',
                        help='delimiter used to parse csv data files')
-    group.add_argument('--text-key', default='sentence',
+    group.add_argument('--text-key', default='text',
                        help='key to use to extract text from json/csv')
     group.add_argument('--eval-text-key', default=None,
                        help='key to use to extract text from '
@@ -311,7 +311,7 @@ def add_data_args(parser):
     group.add_argument('--num-workers', type=int, default=2,
                        help="""Number of workers to use for dataloading""")
     group.add_argument('--tokenizer-model-type', type=str,
-                       default='bert-large-uncased',
+                       default='bert-base-cased',
                        help="Model type to use for sentencepiece tokenization \
                        (one of ['bpe', 'char', 'unigram', 'word']) or \
                        bert vocab to use for BertWordPieceTokenizer (one of \
