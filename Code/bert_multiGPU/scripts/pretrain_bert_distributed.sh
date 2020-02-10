@@ -14,7 +14,9 @@ python -m torch.distributed.launch $DISTRIBUTED_ARGS \
        pretrain_bert.py \
        --batch-size 192 \
        --train-iters 1000000 \
-       --train-data cisco \
+       --train-data cisco_train \
+       --valid-data cisco_dev \
+       --test-data cisco_test \
        --lazy-loader \
        --presplit-sentences \
        --pretrained-bert \

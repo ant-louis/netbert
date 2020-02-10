@@ -19,7 +19,7 @@ def parse_arguments():
     Parser.
     """
     parser = argparse.ArgumentParser('resplit loose json data into train/val/test')
-    parser.add_argument('--input_files', nargs='+', default=glob.glob("/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/*.json"),
+    parser.add_argument('--input_files', nargs='+', default=glob.glob("/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/split_cleaned_*.json"),
                         help='whitespace separated list of input data files')
     parser.add_argument('--output_dir', default='/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/',
                         help='data directory where to get and put files.')

@@ -17,24 +17,60 @@ from .datasets import json_dataset, csv_dataset
 import os
 
 
-class cisco(json_dataset):
+class cisco_train(json_dataset):
     """
-    dataset for cisco with arguments configured for convenience
+    dataset for cisco_train with arguments configured for convenience
 
-    command line usage: `--train-data cisco`
+    command line usage: `--train-data cisco_train`
     """
-    PATH = '/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/split_cleaned_13.json'
-    assert_str = "make sure to set PATH for cisco data_utils/corpora.py"
+    PATH = '/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/train.json'
+    assert_str = "make sure to set PATH for cisco_train data_utils/corpora.py"
     def __init__(self, **kwargs):
-        assert os.path.exists(cisco.PATH), \
-                        cisco.assert_str
+        assert os.path.exists(cisco_train.PATH), \
+                        cisco_train.assert_str
         if not kwargs:
             kwargs = {}
         kwargs['text_key'] = 'text'
         kwargs['loose_json'] = True
-        super(cisco, self).__init__(cisco.PATH, **kwargs)
+        super(cisco_train, self).__init__(cisco_train.PATH, **kwargs)
+
+        
+class cisco_dev(json_dataset):
+    """
+    dataset for cisco_dev with arguments configured for convenience
+
+    command line usage: `--train-data cisco_dev`
+    """
+    PATH = '/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/dev.json'
+    assert_str = "make sure to set PATH for cisco_dev data_utils/corpora.py"
+    def __init__(self, **kwargs):
+        assert os.path.exists(cisco_dev.PATH), \
+                        cisco_dev.assert_str
+        if not kwargs:
+            kwargs = {}
+        kwargs['text_key'] = 'text'
+        kwargs['loose_json'] = True
+        super(cisco_dev, self).__init__(cisco_dev.PATH, **kwargs)
 
 
+class cisco_test(json_dataset):
+    """
+    dataset for cisco_test with arguments configured for convenience
+
+    command line usage: `--train-data cisco_test`
+    """
+    PATH = '/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/test.json'
+    assert_str = "make sure to set PATH for cisco_test data_utils/corpora.py"
+    def __init__(self, **kwargs):
+        assert os.path.exists(cisco_test.PATH), \
+                        cisco_test.assert_str
+        if not kwargs:
+            kwargs = {}
+        kwargs['text_key'] = 'text'
+        kwargs['loose_json'] = True
+        super(cisco_test, self).__init__(cisco_test.PATH, **kwargs)
+        
+        
 class wikipedia(json_dataset):
     """
     dataset for wikipedia with arguments configured for convenience
@@ -74,5 +110,7 @@ class webtext(json_dataset):
 NAMED_CORPORA = {
     'wikipedia': wikipedia,
     'webtext': webtext,
-    'cisco': cisco,
+    'cisco_train': cisco_train,
+    'cisco_dev': cisco_dev,
+    'cisco_test': cisco_test,
 }
