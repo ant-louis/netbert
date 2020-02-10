@@ -6,3 +6,5 @@ Code/bert_multiGPU/model_checkpoints/*
 Code/bert_multiGPU/cache/*
 .ipynb_checkpoints
 .DS_Store
+__pycache__
+*.pyc
