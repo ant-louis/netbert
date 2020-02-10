@@ -104,6 +104,7 @@ def filter_corpus(file_id, data_dir):
                     num_written_docs += 1
                                          
     save_result(data_dir, file_id, start_time, num_docs, num_written_docs, num_fixed_text, num_small_docs)
+    print("Process {} done.".format(file_id))
     
 
 def main(args):
@@ -117,11 +118,9 @@ def main(args):
             print('Process {} is starting...'.format(i+1))
             p.start()
             time.sleep(1)
-
         # Complete the processes
         for p in process_list:
-            p.join()
-            
+            p.join()       
     else:
         i = args.file_id
         filter_corpus(i, args.data_dir)

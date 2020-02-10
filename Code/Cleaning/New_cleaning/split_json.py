@@ -10,17 +10,28 @@ import os
 import argparse
 import math
 import random
+import glob
 
-parser = argparse.ArgumentParser('resplit loose json data into train/val/test')
-parser.add_argument('--input_files', nargs='+', required=True,
-                    help='whitespace separated list of input data files')
-parser.add_argument('--output_dir', required=True,
-                    help='output directory where to put files')
-parser.add_argument('--test_percent', type=float, nargs='+', default=[0.05, 0],
-                    help='percentage of available data to use for val/test dataset')
-args = parser.parse_args()
+
+
+def parse_arguments():
+    """
+    Parser.
+    """
+    parser = argparse.ArgumentParser('resplit loose json data into train/val/test')
+    parser.add_argument('--input_files', nargs='+', default=glob.glob("/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/*.json"),
+                        help='whitespace separated list of input data files')
+    parser.add_argument('--output_dir', default='/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/',
+                        help='data directory where to get and put files.')
+    parser.add_argument('--test_percent', type=float, nargs='+', default=[0.05, 0.05],
+                        help='percentage of available data to use for val/test dataset')
+    arguments, _ = parser.parse_known_args()
+    return arguments
+
 
 def get_lines(filepath):
+    """
+    """
     lines = []
     with open(filepath, 'r') as f:
         for i, l in enumerate(f.readlines()):
@@ -28,7 +39,10 @@ def get_lines(filepath):
             lines.append(l)
     return lines
 
+
 def get_splits(lines, line_counts):
+    """
+    """
     all_lines = []
     line_idx = []
     file_mappings = []
@@ -53,14 +67,20 @@ def get_splits(lines, line_counts):
         start = end
     return splits, mappings
 
+
+
 def format_mappings(line_idx, file_mappings):
+    """
+    """
     lines = []
     for m, l in zip(file_mappings, line_idx):
         lines.append(str(m).strip()+'\t'+str(l).strip())
     return lines
 
 
-def get_filepaths(filepaths, output_dir):
+def get_filepaths(output_dir):
+    """
+    """
     paths = []
     train_path = 'train.json'
     dev_path = 'dev.json'
@@ -70,50 +90,70 @@ def get_filepaths(filepaths, output_dir):
     paths.append(os.path.join(output_dir, test_path))
     return paths
 
+
 def write_files(lines, mappings, filepaths):
+    """
+    """
     for l, m, path in zip(lines, mappings, filepaths):
         write_file(l, path)
         write_mapping_file(m, path)
 
+        
+        
 def write_file(lines, path):
+    """
+    """
     print('Writing:', path)
     with open(path, 'w') as f:
         for l in lines:
             f.write(l+'\n')
 
+            
 def write_mapping_file(m, path):
+    """
+    """
     path = path+'.map'
     m = [get_mapping_header()]+m
     write_file(m, path)
 
+    
+    
 def get_mapping_header():
+    """
+    """
     return 'file\tline #'
 
-if not os.path.exists(args.output_dir):
-    os.makedirs(args.output_dir)
 
-lines = []
+def main(args):
+    """
+    """
+    print("Gathering sentences...")
+    lines = []
+    for filepath in args.input_files:
+        _lines = get_lines(filepath)
+        lines.append(_lines)
 
-for filepath in args.input_files:
-    _lines = get_lines(filepath)
-    lines.append(_lines)
+    line_counts = [len(l) for l in lines]
+    total_lines = sum(line_counts)
+    print("Total number of sentences: {}".format(total_lines))
+    
+    dev_percent = args.test_percent[0]
+    dev_lines = math.ceil(dev_percent*total_lines)
+    test_percent = 0
+    if len(args.test_percent)==2:
+        test_percent=args.test_percent[1]
+    test_lines = math.ceil(test_percent*total_lines)
+    train_lines = total_lines-(test_lines+dev_lines)
+    normed_lines = [train_lines, dev_lines, test_lines]
+    normed_lines = [int(l) for l in normed_lines]
 
-#calculate number of lines to use for each
-line_counts = [len(l) for l in lines]
-total_lines = sum(line_counts)
-dev_percent = args.test_percent[0]
-dev_lines = math.ceil(dev_percent*total_lines)
-test_percent = 0
-if len(args.test_percent)==2:
-    test_percent=args.test_percent[1]
-test_lines = math.ceil(test_percent*total_lines)
-train_lines = total_lines-(test_lines+dev_lines)
-normed_lines = [train_lines, dev_lines, test_lines]
-normed_lines = [int(l) for l in normed_lines]
+    print("Splitting sentences...")
+    splits, mappings = get_splits(lines, normed_lines)
+    filepaths = get_filepaths(args.output_dir)
+    print('Writing output to:', filepaths)
+    write_files(splits, mappings, filepaths)
 
 
-splits, mappings = get_splits(lines, normed_lines)
-filepaths = get_filepaths(args.input_files, args.output_dir)
-print('Writing output to:', filepaths)
-write_files(splits, mappings, filepaths)
-
+if __name__ == "__main__":
+    args = parse_arguments()
+    main(args)
