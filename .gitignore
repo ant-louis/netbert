@@ -11,7 +11,7 @@ Code/Training/bert_multiGPU/hugging_face/runs/*
 Code/Training/bert_multiGPU/hugging_face/GLUE_data/*
 Code/-/transformers/*
 Code/-/bertsearch/*
-Code/Search/models*
+Code/Search/models/*
 .ipynb_checkpoints
 .DS_Store
 __pycache__
