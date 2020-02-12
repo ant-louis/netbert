@@ -24,7 +24,8 @@ def create_dataframe(id_file):
         for i, doc in enumerate(data):
             text = doc.get('text') # Get the text of the current doc
             if text is not None:
-                row_dict = {'Text': text[0], 'Length': len(text[0])}
+                text = ' '.join(doc.get('text')) # Flatten list of strings
+                row_dict = {'Text': text, 'Length': len(text)}
                 rows.append(row_dict)
     return pd.DataFrame(rows)
     
