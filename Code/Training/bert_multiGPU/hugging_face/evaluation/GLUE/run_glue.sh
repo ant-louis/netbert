@@ -1,5 +1,5 @@
 export GLUE_DIR=./GLUE_data
-export TASK_NAME=MRPC #CoLA, SST-2, MRPC, STS-B, QQP, MNLI, QNLI, RTE, WNLI
+export TASK_NAME=SST-2 #CoLA, SST-2, MRPC, STS-B, QQP, MNLI, QNLI, RTE, WNLI
 
 python run_glue.py \
   --model_type bert \
@@ -13,4 +13,4 @@ python run_glue.py \
   --per_gpu_train_batch_size 32 \
   --learning_rate 2e-5 \
   --num_train_epochs 3.0 \
-  --output_dir ./output/Eval/$TASK_NAME/ |& tee ./output/Eval/$TASK_NAME/logs.txt
+  --output_dir ./output/Eval/$TASK_NAME/ |& tee ./output/$TASK_NAME/logs.txt
