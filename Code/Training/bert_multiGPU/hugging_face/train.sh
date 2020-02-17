@@ -16,8 +16,7 @@ python run_language_modeling.py \
     --mlm \
     --mlm_probability=0.15 \
     --output_dir=$OUT_DIR \
+    --overwrite_output_dir \
     --cache_dir=./cache \
     --do_eval \
     --eval_data_file=$DEV_FILE |& tee ./output/Training/logs/bert_base_uncased.txt
-
-
