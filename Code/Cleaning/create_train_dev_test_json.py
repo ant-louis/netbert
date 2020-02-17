@@ -135,7 +135,7 @@ def main(args):
 
     line_counts = [len(l) for l in lines]
     total_lines = sum(line_counts)
-    print("Total number of sentences: {}".format(total_lines))
+    print("Total number of documents: {}".format(total_lines))
     
     dev_percent = args.test_percent[0]
     dev_lines = math.ceil(dev_percent*total_lines)
