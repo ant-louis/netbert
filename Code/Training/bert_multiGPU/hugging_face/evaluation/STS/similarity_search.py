@@ -2,6 +2,7 @@ import numpy as np
 import argparse
 import math
 import json
+from Levenshtein import distance as levenshtein_distance
 from bert_serving.client import BertClient
 
 
@@ -30,6 +31,22 @@ def extract_sentences(filepath):
     return sentences
 
 
+def cosine_similarity_matrix(query_vec, sentences_vecs):
+    """
+    Given a query vector and an array of sentence vectors, return an array of cosine
+    similarity scores between the query and each sentence.
+    """
+    return np.sum(query_vec * sentences_vecs, axis=1) / (np.linalg.norm(query_vec) * np.linalg.norm(sentences_vecs, axis=1))
+
+
+def cosine_similarity(vec1, vec2):
+    """
+    Given two vectors, return the cosine similarity score.
+    """
+    return np.dot(vec1, vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
+    
+
+
 def main(args):
     """
     """
@@ -42,14 +59,29 @@ def main(args):
         sentences_vecs = bc.encode(sentences)
     
         for query_idx, query_vec in enumerate(sentences_vecs):
-            # compute normalized dot product as score
-            score = np.sum(query_vec * sentences_vecs, axis=1) / np.linalg.norm(sentences_vecs, axis=1)
-            topk_idx = np.argsort(score)[::-1][1:args.topk]
+            # Compute edit distances between query and each sentence
+            edit_distances = [levenshtein_distance(sentences[query_idx], sent) for sent in sentences]
+            
+            # Take the top 10% most dissimilar sentences according to the edit distance
+            topk = int(0.1 * len(sentences))
+            topk_edit_idx = np.argsort(edit_distances)[::-1][:topk]
+            
+            # Among these most dissimilar sentences, take the top 5 with highest cosine similarity
+            scores = [(cosine_similarity(query_vec, sentences_vecs[i]), i) for i in topk_edit_idx]
+            if args.topk > topk:
+                print("ERROR: must choose a topk value under {}".format(topk))
+                break
+            topk_cosine_idx = np.argsort(scores[0])[::-1][:args.topk]
+            
+            ##### TO FINISH
+            
+            # Create the json output
             query_dict = dict()
-            for i, idx in enumerate(topk_idx):
+            for i, idx in enumerate(topk_cosine_idx):
                 tmp_dict = dict()
                 tmp_dict['Sentence'] = sentences[idx]
-                tmp_dict['Score'] = str(score[idx])
+                tmp_dict['Edit distance'] = str(edit_distances[idx])
+                tmp_dict['Cosine similarity'] = str(scores[idx])
                 query_dict[str(i+1)] = tmp_dict
             sim_dict[sentences[query_idx]] = query_dict
             
