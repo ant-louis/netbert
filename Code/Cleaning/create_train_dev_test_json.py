@@ -19,9 +19,9 @@ def parse_arguments():
     Parser.
     """
     parser = argparse.ArgumentParser('resplit loose json data into train/val/test')
-    parser.add_argument('--input_files', nargs='+', default=glob.glob("/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/split_cleaned_*.json"),
+    parser.add_argument('--input_files', nargs='+', default=glob.glob("/raid/antoloui/Master-thesis/Data/Cleaned/split_cleaned_*.json"),
                         help='whitespace separated list of input data files')
-    parser.add_argument('--output_dir', default='/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/',
+    parser.add_argument('--output_dir', default='/raid/antoloui/Master-thesis/Data/Cleaned/',
                         help='data directory where to get and put files.')
     parser.add_argument('--test_percent', type=float, nargs='+', default=[0.05, 0.05],
                         help='percentage of available data to use for val/test dataset')

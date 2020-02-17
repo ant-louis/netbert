@@ -2,6 +2,7 @@ import sys
 import json
 import argparse
 import time
+import os
 from multiprocessing import Process
 
 import nltk
@@ -17,21 +18,21 @@ def parse_arguments():
     Parser.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", type=str, default='/raid/antoloui/Master-thesis/Data/Cleaned/New_cleaning/',
+    parser.add_argument("--data_dir", type=str, default='/raid/antoloui/Master-thesis/Data/Cleaned/',
                         help="Path of the data directory.")
-    parser.add_argument("--file_id", type=int,
-                        help="Id of the input file.")
+    parser.add_argument("--infile", type=str,
+                        help="Name of the input file.")
     parser.add_argument("--all", type=bool, default=False,
                         help="Create pretraining data for all files.")
     arguments, _ = parser.parse_known_args()
     return arguments
 
 
-def split_sentences(file_id, data_dir):
+def split_sentences(infile, data_dir):
     """
     """
-    in_filename = data_dir + 'cleaned_' + str(file_id) + '.json'
-    out_filename = data_dir + 'split_cleaned_' + str(file_id) + '.json'
+    in_filename = data_dir + infile
+    out_filename = data_dir + 'split_' + infile
 
     line_seperator = "\n"
     with open(in_filename, 'r') as ifile:
@@ -58,7 +59,7 @@ def split_sentences(file_id, data_dir):
                 # Write to output file
                 parsed['text'] = line_seperator.join(list_sent)
                 ofile.write(json.dumps(parsed)+'\n')
-    print("Process {} done.".format(file_id))
+    print("{} : sentence segmentation done !".format(infile))
 
 
 def main(args):
@@ -66,8 +67,11 @@ def main(args):
     Run processes in parallel if --all=True, otherwise run one process.
     """
     if args.all:
+        # Get the file paths
+        filenames = [f for f in os.listdir(args.data_dir) if f.startswith('cleaned_') and f.endswith('.json')]
+        
         # Instantiating process with arguments
-        process_list = [Process(target=split_sentences, args=(i, args.data_dir,)) for i in range(1,14)]
+        process_list = [Process(target=split_sentences, args=(f, args.data_dir,)) for f in filenames]
         for i, p in enumerate(process_list):
             print('Process {} is starting...'.format(i+1))
             p.start()
@@ -76,8 +80,8 @@ def main(args):
         for p in process_list:
             p.join()       
     else:
-        i = args.file_id
-        split_sentences(i, args.data_dir)
+        file = args.infile
+        split_sentences(file, args.data_dir)
 
         
 
