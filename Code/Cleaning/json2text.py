@@ -10,6 +10,8 @@ def parse_arguments():
     Parser.
     """
     parser = argparse.ArgumentParser()
+    parser.add_argument("--data_dir", type=str, default='/raid/antoloui/Master-thesis/Data/Cleaned/',
+        help="Path of the data directory.")
     parser.add_argument("--json_file", type=str,
         help="path where the json file is located")
     parser.add_argument("--output_file", type=str,
@@ -21,9 +23,8 @@ def parse_arguments():
 def main(args):
     """
     """
-    data_dir = '/raid/antoloui/Master-thesis/Data/Cleaned/'
-    fname = data_dir + args.json_file
-    out_file = data_dir + args.output_file
+    fname = args.data_dir + args.json_file
+    out_file = args.data_dir + args.output_file
 
     with open(out_file, 'w') as outfile:
         with open(fname, 'r') as infile:
