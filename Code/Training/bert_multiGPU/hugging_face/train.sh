@@ -1,6 +1,6 @@
 #Models: bert-base-multilingual-cased, bert-base-uncased
 export TRAIN_FILE=/raid/antoloui/Master-thesis/Data/Cleaned/train.raw
-export OUT_DIR=./output/Training/base_uncased/
+export OUT_DIR=./output/base_uncased/
 export DEV_FILE=/raid/antoloui/Master-thesis/Data/Cleaned/dev.raw
 
 python run_language_modeling.py \
@@ -19,4 +19,4 @@ python run_language_modeling.py \
     --overwrite_output_dir \
     --cache_dir=./cache \
     --do_eval \
-    --eval_data_file=$DEV_FILE |& tee ./output/Training/logs/bert_base_uncased.txt
+    --eval_data_file=$DEV_FILE |& tee ./output/logs/bert_base_uncased.txt

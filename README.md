@@ -22,7 +22,7 @@ The original dataset used for pre-training BERT consists of all content of [cisc
 
 | Documents  | Sentences  | Words   |  Unique words | Chars |
 |------------|------------|-------- |---------------|-------|
-|            | 153,5M     | 3,3B    | 4,7M          | 21,7B |
+| 426,5K     | 145,9M     | 3,1B    | 4,6M          | 21,7B |
 
 
 ## Pre-training <a name="pretraining"></a>
@@ -36,4 +36,4 @@ The pretraining of BERT is done using the [transformers](https://github.com/hugg
 
 
 ## About <a name="about"></a>
-This project takes place as part of my Master Thesis in Data Science & Engineering @University of Liège, Belgium. It is combined with an internship @Cisco Brussels.
+This project takes place as part of my Master Thesis in Data Science & Engineering @University of Liège, Belgium. It is combined with an internship @Cisco.
