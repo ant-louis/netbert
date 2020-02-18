@@ -19,8 +19,13 @@ import os
 import argparse
 import torch
 import numpy as np
-import tensorflow as tf
-from transformers.modeling import BertModel
+import tensorflow.compat.v1 as tf
+from transformers import BertModel
+
+##-Added-------------------------------------------
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]="1" #"1,2,3,4,5,6,7" # specify which GPU(s) to be used
+##-------------------------------------------------
 
 
 def convert_pytorch_checkpoint_to_tf(model:BertModel, ckpt_dir:str, model_name:str):
@@ -87,8 +92,9 @@ def convert_pytorch_checkpoint_to_tf(model:BertModel, ckpt_dir:str, model_name:s
             tf_weight = session.run(tf_var)
             print("Successfully created {}: {}".format(tf_name, np.allclose(tf_weight, torch_tensor)))
 
+        name = os.path.basename(model_name)
         saver = tf.train.Saver(tf.trainable_variables())
-        saver.save(session, os.path.join(ckpt_dir, model_name.replace("-", "_") + ".ckpt"))
+        saver.save(session, os.path.join(ckpt_dir, name.replace("-", "_") + ".ckpt"))
 
 
 def main(raw_args=None):
@@ -127,3 +133,5 @@ def main(raw_args=None):
 
 if __name__ == "__main__":
     main()
+    
+# python convert_pytorch_checkpoint_to_tf.py --model_name=./output/netbert --pytorch_model_path=./output/netbert/pytorch_model.bin --tf_cache_dir=./output/netbert/tf-checkpoint/
