@@ -45,6 +45,20 @@ def cosine_similarity(vec1, vec2):
     Given two vectors, return the cosine similarity score.
     """
     return np.dot(vec1, vec2)/(np.linalg.norm(vec1)*np.linalg.norm(vec2))
+
+
+def manhattan_distance(vec1, vec2):
+    """
+    Given two vectors, return the manhattan distance.
+    """
+    return np.sum(np.abs(vec1-vec2))
+
+
+def euclidean_distance(vec1, vec2):
+    """
+    Given two vectors, return the euclidean distance.
+    """
+    return np.linalg.norm(vec1-vec2)
     
 
 

@@ -1,5 +1,0 @@
-If ICMP is not enabled on the device, the device is moved to the Unreachable state.
-See Discovery Life Cycle for information on how to disable ICMP verification.
-Gets all the defined credential profiles, based on the IP address.
-See Managing Device Credentials to understand how to define the credential profiles.
-Checks whether the SNMP credentials match.
