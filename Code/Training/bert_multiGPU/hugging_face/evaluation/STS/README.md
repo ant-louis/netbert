@@ -16,6 +16,7 @@ The sentences are encoded using the famous [bert-as-service](https://github.com/
 export ZEROMQ_SOCK_TMP_DIR=/tmp/
 bert-serving-start -num_worker=1 -max_seq_len=NONE -model_dir <path_of_tf_model>
 ```
+Note that the tensorflow checkpoint needs to have a bert_model.ckpt file containing the pre-trained weights (which is actually 3 files), a vocab file (vocab.txt) to map WordPiece to word id, and a config file (bert_config.json) which specifies the hyperparameters of the model.
 
 2. Run the following command:
 
