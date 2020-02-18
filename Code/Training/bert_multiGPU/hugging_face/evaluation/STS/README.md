@@ -13,7 +13,8 @@ The sentences are encoded using the famous [bert-as-service](https://github.com/
 1. Start bert-as-a-service server:
 
 ```
-bert-serving-start -model_dir ./models/base_cased/ -num_worker=1 -max_seq_len=NONE
+export ZEROMQ_SOCK_TMP_DIR=/tmp/
+bert-serving-start -num_worker=1 -max_seq_len=NONE -model_dir <path_of_tf_model>
 ```
 
 2. Run the following command:

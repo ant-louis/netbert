@@ -12,11 +12,11 @@ def parse_arguments():
     Parser.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--filepath", type=str, default='./sample.txt',
+    parser.add_argument("--filepath", type=str, default='./data/sample.txt',
                         help="Path of the file containing the sentences to encode.")
     parser.add_argument("--topk", type=int, default=5,
                         help="Number of most similar sentences to retrieve.")
-    parser.add_argument("--output", type=str, default='./output/similarities.json',
+    parser.add_argument("--output", type=str, default='./output/similarities_netbert.json',
                         help="Path where to save output.")
     arguments, _ = parser.parse_known_args()
     return arguments
