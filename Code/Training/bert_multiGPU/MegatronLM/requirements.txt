@@ -1,9 +1,0 @@
-nltk>=3.4
-numpy>=1.15.4
-pandas>=0.24.0
-sentencepiece>=0.1.8
-tensorflow-gpu==1.14.0
-boto3
-tqdm
-regex
-requests
