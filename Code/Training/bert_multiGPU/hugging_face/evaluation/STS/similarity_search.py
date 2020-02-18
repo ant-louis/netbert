@@ -2,6 +2,7 @@ import numpy as np
 import argparse
 import math
 import json
+from operator import itemgetter
 from Levenshtein import distance as levenshtein_distance
 from bert_serving.client import BertClient
 
@@ -71,17 +72,15 @@ def main(args):
             if args.topk > topk:
                 print("ERROR: must choose a topk value under {}".format(topk))
                 break
-            topk_cosine_idx = np.argsort(scores[0])[::-1][:args.topk]
-            
-            ##### TO FINISH
+            topk_cosine = [(x[0],x[1]) for x in sorted(scores, key=itemgetter(0), reverse=True)][:args.topk]
             
             # Create the json output
             query_dict = dict()
-            for i, idx in enumerate(topk_cosine_idx):
+            for i, (cos, idx) in enumerate(topk_cosine):
                 tmp_dict = dict()
                 tmp_dict['Sentence'] = sentences[idx]
                 tmp_dict['Edit distance'] = str(edit_distances[idx])
-                tmp_dict['Cosine similarity'] = str(scores[idx])
+                tmp_dict['Cosine similarity'] = str(cos)
                 query_dict[str(i+1)] = tmp_dict
             sim_dict[sentences[query_idx]] = query_dict
             
