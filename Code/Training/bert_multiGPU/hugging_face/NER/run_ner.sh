@@ -1,5 +1,5 @@
 export MAX_LENGTH=128
-export BERT_MODEL=bert-base-cased
+export BERT_MODEL=../models/netbert  #bert-base-cased
 
 export OUTPUT_DIR=./output/model
 export DATA_DIR=/raid/antoloui/Master-thesis/Data/NER
@@ -24,4 +24,4 @@ python run_ner.py \
     --seed $SEED \
     --fp16 \
     --do_train \
-    --do_eval |& tee ./output/logs/logs.txt
+    --do_eval |& tee ./output/logs/logs_netbert.txt
