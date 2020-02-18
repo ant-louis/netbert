@@ -8,10 +8,10 @@ Code/Training/bert_multiGPU/MegatronLM/tensorboard/*
 Code/Training/bert_multiGPU/hugging_face/cache/*
 Code/Training/bert_multiGPU/hugging_face/output/*
 Code/Training/bert_multiGPU/hugging_face/runs/*
+Code/Training/bert_multiGPU/hugging_face/models/*
 Code/Training/bert_multiGPU/hugging_face/GLUE/GLUE_data/*
 Code/Training/bert_multiGPU/hugging_face/GLUE/output/*
 Code/Training/bert_multiGPU/hugging_face/GLUE/runs/*
-Code/Training/bert_multiGPU/hugging_face/STS/models/*
 Code/Training/bert_multiGPU/hugging_face/STS/output/*
 Code/Training/bert_multiGPU/hugging_face/STS/data/*
 Code/Training/bert_multiGPU/hugging_face/summarization/data/*
