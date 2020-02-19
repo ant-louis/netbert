@@ -18,11 +18,13 @@ Therefore, we introduce NetBERT (Bidirectional Encoder Representations from Tran
 
 
 ## Datasets <a name="datasets"></a>
-The original dataset used for pre-training BERT consists of all content of [cisco.com](https://www.cisco.com/) resulting in about 30 GB of text data. This dataset is further preprocessed before training (see [Code/Cleaning](./Code/Cleaning/README.md) for detailed information about data cleaning). The resulting dataset has the following properties:
+The original dataset used for pre-training BERT consists of all content of [cisco.com](https://www.cisco.com/) resulting in about 30GB of uncleaned text data. This dataset is further preprocessed before training (see [Code/Cleaning](./Code/Cleaning/README.md) for detailed information about data cleaning). The resulting dataset has the following properties:
 
-| Documents  | Sentences  | Words   |  Unique words | Chars |
-|------------|------------|-------- |---------------|-------|
-| 426,5K     | 145,9M     | 3,1B    | 4,6M          | 21,7B |
+|         | Documents  | Sentences  | Words   | Chars | Size   |
+|---------|------------|------------|-------- |-------|--------|
+|**Train**| 383.9K     | 145.9M     | 3.1B    | 21.7B | 20.4GB |
+|**Dev**  | 21.3K      | 8.8M       | 192.3M  | 1.2B  | 1.2GB  |
+|**Test** | 21.3K      | 8.4M       | 182.2M  |       | 1.1GB  |
 
 
 ## Pre-training <a name="pretraining"></a>
