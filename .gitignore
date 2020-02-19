@@ -1,4 +1,5 @@
 Data/*
+Code/Visualization/data/*
 Code/Training/bert_singleGPU/models/*
 Code/Training/bert_singleGPU/pretraining_output_fullfat/*
 Code/Training/bert_singleGPU/pretraining_output_megafat/*
