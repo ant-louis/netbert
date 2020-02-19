@@ -1,5 +1,6 @@
 import argparse
-from numpy import save
+import numpy as np
+import pandas as pd
 
 from bert_serving.client import BertClient
 
@@ -11,10 +12,10 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--filepath", type=str, default='./data/little_sample.txt',
                         help="Path of the file containing the sentences to encode.")
-    parser.add_argument("--output", type=str, default='./output/encodings.npy',
+    parser.add_argument("--output", type=str, default='./output/encodings.csv',
                         help="Path where to save sentence encodings.")
-    parser.add_argument("--sentences", type=bool, default=True,
-                        help="Wether to encode sentences (if set to False, will encode words).")
+    parser.add_argument("--sentences", action="store_true",
+                        help="Wether to encode sentences.")
     arguments, _ = parser.parse_known_args()
     return arguments
 
@@ -56,11 +57,14 @@ def main(args):
     with BertClient() as bc:
         encodings = bc.encode(strings)
         
-       
-    print(encodings)
+    # Create dataframe
+    cols = ['feat'+str(i) for i in range(encodings.shape[1])]
+    df = pd.DataFrame(data=encodings[:,:], columns=cols)
+    df['text'] = strings
+    print(df.shape)
     
-    # Save encodings to npy file
-    save(args.output, encodings)
+    # Save encodings
+    df.to_csv(args.output, index=False, sep=',', encoding='utf-8', float_format='%.10f', decimal='.')
     print("Encodings saved !")
 
 
