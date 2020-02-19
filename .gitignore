@@ -17,6 +17,7 @@ Code/Training/bert_multiGPU/hugging_face/STS/data/*
 Code/Training/bert_multiGPU/hugging_face/summarization/data/*
 Code/Training/bert_multiGPU/hugging_face/summarization/output/*
 Code/Training/bert_multiGPU/hugging_face/NER/output/*
+Code/Training/bert_multiGPU/hugging_face/NER/runs/*
 Code/-/transformers/*
 Code/-/bertsearch/*
 Code/Search/models/*
