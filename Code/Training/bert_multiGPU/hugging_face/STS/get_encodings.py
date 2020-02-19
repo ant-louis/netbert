@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import pandas as pd
+import string
 
 from bert_serving.client import BertClient
 
@@ -38,7 +39,12 @@ def extract_words(filepath):
     words = []
     with open(filepath) as infile:
         for line in infile:
-            words.extend(line.split())
+            # Lowercase sentence and split it into words
+            tokens = line.lower().split()
+            print(tokens)
+            # Remove punctuation from each word
+            tokens = [tok.translate(str.maketrans('', '', string.punctuation)) for tok in tokens]
+            words.extend(tokens)
     return list(set(words))
             
     
@@ -51,8 +57,8 @@ def main(args):
         strings = extract_sentences(args.filepath)
     else:
         strings = extract_words(args.filepath)
+        print(strings)
         
-    
     # Encode strings via bert-as-service
     with BertClient() as bc:
         encodings = bc.encode(strings)
@@ -61,7 +67,6 @@ def main(args):
     cols = ['feat'+str(i) for i in range(encodings.shape[1])]
     df = pd.DataFrame(data=encodings[:,:], columns=cols)
     df['text'] = strings
-    print(df.shape)
     
     # Save encodings
     df.to_csv(args.output, index=False, sep=',', encoding='utf-8', float_format='%.10f', decimal='.')
