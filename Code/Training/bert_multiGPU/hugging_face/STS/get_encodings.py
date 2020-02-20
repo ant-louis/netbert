@@ -39,11 +39,9 @@ def extract_words(filepath):
     words = []
     with open(filepath) as infile:
         for line in infile:
-            # Lowercase sentence and split it into words
-            tokens = line.lower().split()
-            print(tokens)
-            # Remove punctuation from each word
-            tokens = [tok.translate(str.maketrans('', '', string.punctuation)) for tok in tokens]
+            tokens = line.lower().split() # Lowercase sentence and split it into words
+            tokens = [tok.translate(str.maketrans('', '', string.punctuation)) for tok in tokens]  # Remove punctuation from each word
+            tokens = list(filter(None, tokens))  # Remove empty strings
             words.extend(tokens)
     return list(set(words))
             
