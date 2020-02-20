@@ -1,6 +1,6 @@
 # NetBERT: a pre-trained computer networking language representation model
 
-This repository provides the code for pre-training and fine-tuning NetBERT, a computer networking language representation model designed for networking text mining tasks such as named entity recognition (NER).
+This repository provides the code for pre-training and fine-tuning NetBERT, a computer networking language representation model designed for networking text mining tasks such as named entity recognition (NER) or document classification.
 
 ## Table of contents
 1. [Motivation](#motivation)
@@ -18,7 +18,7 @@ Therefore, we introduce NetBERT (Bidirectional Encoder Representations from Tran
 
 
 ## Datasets <a name="datasets"></a>
-The original dataset used for pre-training BERT consists of all content of [cisco.com](https://www.cisco.com/) resulting in about 30GB of uncleaned text data. This dataset is further preprocessed before training (see [Code/Cleaning](./Code/Cleaning/README.md) for detailed information about data cleaning). The resulting dataset has the following properties:
+The original dataset used for pre-training BERT consists of all content of [cisco.com](https://www.cisco.com/) resulting in about 30GB of uncleaned text data. This dataset is further preprocessed before training (see [Cleaning](./Code/Cleaning/README.md) for detailed information about data cleaning). The resulting dataset has the following properties:
 
 |         | Documents  | Sentences  | Words   | Chars | Size   |
 |---------|------------|------------|-------- |-------|--------|
@@ -34,8 +34,12 @@ The pretraining of BERT is done using the [transformers](https://github.com/hugg
 
 
 ## Fine-tuning <a name="pretraining"></a>
+
+### Named Entity Recognition (NER)
 *Coming up...*
 
+### Document classification
+*Coming up...*
 
 ## About <a name="about"></a>
 This project takes place as part of my Master Thesis in Data Science & Engineering @University of Liège, Belgium. It is combined with an internship @Cisco.
