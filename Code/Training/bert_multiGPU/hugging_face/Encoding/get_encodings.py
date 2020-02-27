@@ -60,6 +60,7 @@ def main(args):
     # Encode strings via bert-as-service
     with BertClient() as bc:
         encodings = bc.encode(strings)
+        print(encodings.shape)
         
     # Create dataframe
     cols = ['feat'+str(i) for i in range(encodings.shape[1])]
