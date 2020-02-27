@@ -24,7 +24,7 @@ The original dataset used for pre-training BERT consists of all content of [cisc
 |---------|------------|------------|-------- |-------|--------|
 |**Train**| 383.9K     | 145.9M     | 3.1B    | 21.7B | 20.4GB |
 |**Dev**  | 21.3K      | 8.8M       | 192.3M  | 1.2B  | 1.2GB  |
-|**Test** | 21.3K      | 8.4M       | 182.2M  |       | 1.1GB  |
+|**Test** | 21.3K      | 8.4M       | 182.2M  | 1.1B  | 1.1GB  |
 
 
 ## Pre-training <a name="pretraining"></a>
