@@ -21,6 +21,8 @@ Code/Training/Summarization/output/*
 Code/Training/NER/output/*
 Code/Training/NER/runs/*
 Code/Training/QA/UnsupervisedQA/data/*
+Code/Training/Classification/output/*
+Code/Training/Classification/runs/*
 Code/-/transformers/*
 Code/-/bertsearch/*
 Code/Search/models/*
