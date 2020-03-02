@@ -4,6 +4,7 @@ import sys
 import time
 import datetime
 import random
+import os
 
 import pandas as pd
 import numpy as np
@@ -65,7 +66,7 @@ def parse_arguments():
                         help="Where do you want to store the pre-trained models downloaded from s3.",
     )
     parser.add_argument("--num_epochs",
-                        default=3,
+                        default=4,
                         type=int,
                         help="Total number of training epochs to perform. Authors recommend between 2 and 4",
     )
@@ -76,7 +77,18 @@ def parse_arguments():
     parser.add_argument("--adam_epsilon",
                         default=1e-8,
                         type=float,
-                        help="Epsilon for Adam optimizer.")
+                        help="Epsilon for Adam optimizer.",
+    )
+    parser.add_argument("--output_dir",
+                        default='./output/',
+                        type=str,
+                        help="The output directory where the model predictions and checkpoints will be written.",
+    )
+    parser.add_argument("--gpu_id",
+                        default=0,
+                        type=int,
+                        help="Id of the GPU to use if multiple GPUs.",
+    )
     arguments, _ = parser.parse_known_args()
     return arguments
 
@@ -255,9 +267,18 @@ def main(args):
     print("\n========================================")
     print('                 Training               ')
     print("========================================\n")
-    # Setup CUDA, GPU
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Create tensorboard summarywriter
+    tb_writer = SummaryWriter()
     
+    # Setup CUDA, GPU
+    torch.cuda.set_device(args.gpu_id)
+    if torch.cuda.is_available():    
+        device = torch.device("cuda") # Tell PyTorch to use the GPU.
+        print('GPU training available! GPU used: {} ({})\n'.format(torch.cuda.get_device_name(args.gpu_id), args.gpu_id))
+    else:
+        print('No GPU available, using the CPU instead.')
+        device = torch.device("cpu")
+
     # Set the seed value all over the place to make this reproducible.
     set_seed(args.seed)
     
@@ -357,6 +378,7 @@ def main(args):
             # single value; the `.item()` function just returns the Python value 
             # from the tensor.
             total_loss += loss.item()
+            tb_writer.add_scalar('Loss', loss.item(), step)
 
             # Perform a backward pass to calculate the gradients.
             loss.backward()
@@ -447,8 +469,20 @@ def main(args):
         print("  Accuracy: {0:.2f}".format(eval_accuracy/nb_eval_steps))
         print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
-    print("")
-    print("Training complete!")
+    print("\nTraining complete!\n")
+    
+    print("Saving model to %s...\n" % output_dir)
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+
+    # Save a trained model, configuration and tokenizer using `save_pretrained()`.
+    # They can then be reloaded using `from_pretrained()`
+    model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
+    model_to_save.save_pretrained(output_dir)
+    tokenizer.save_pretrained(output_dir)
+
+    # Good practice: save your training arguments together with the trained model
+    torch.save(args, os.path.join(output_dir, 'training_args.bin'))
     
 
 if __name__=="__main__":
