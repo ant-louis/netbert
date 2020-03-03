@@ -89,6 +89,11 @@ def parse_arguments():
                         type=int,
                         help="Id of the GPU to use if multiple GPUs.",
     )
+    parser.add_argument("--logging_steps",
+                        default=40,
+                        type=int,
+                        help="Log every X updates steps.",
+    )
     arguments, _ = parser.parse_known_args()
     return arguments
 
@@ -302,9 +307,9 @@ def main(args):
     scheduler = get_linear_schedule_with_warmup(optimizer, 
                                                 num_warmup_steps = 0, # Default value in run_glue.py
                                                 num_training_steps = total_steps)
-
-    # Store the average loss after each epoch so we can plot them.
-    loss_values = []
+    # Init some useful variables.
+    global_step = 0
+    tr_loss, logging_loss = 0.0, 0.0
 
     # For each epoch...
     for epoch_i in range(0, args.num_epochs):
@@ -320,9 +325,6 @@ def main(args):
         # Measure how long the training epoch takes.
         t0 = time.time()
 
-        # Reset the total loss for this epoch.
-        total_loss = 0
-
         # Put the model into training mode. Don't be mislead--the call to 
         # `train` just changes the *mode*, it doesn't *perform* the training.
         # `dropout` and `batchnorm` layers behave differently during training
@@ -332,19 +334,8 @@ def main(args):
         # For each batch of training data...
         for step, batch in enumerate(train_dataloader):
 
-            # Progress update every 40 batches.
-            if step % 40 == 0 and not step == 0:
-                # Calculate elapsed time in minutes.
-                elapsed = format_time(time.time() - t0)
-
-                # Report progress.
-                print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
-
             # Unpack this training batch from our dataloader. 
-            #
-            # As we unpack the batch, we'll also copy each tensor to the GPU using the 
-            # `to` method.
-            #
+            # As we unpack the batch, we'll also copy each tensor to the GPU using the `to` method.
             # `batch` contains three pytorch tensors:
             #   [0]: input ids 
             #   [1]: attention masks
@@ -353,15 +344,13 @@ def main(args):
             b_input_mask = batch[1].to(device)
             b_labels = batch[2].to(device)
 
-            # Always clear any previously calculated gradients before performing a
-            # backward pass. PyTorch doesn't do this automatically because 
-            # accumulating the gradients is "convenient while training RNNs". 
+            # Always clear any previously calculated gradients before performing a backward pass. 
+            # PyTorch doesn't do this automatically because accumulating the gradients is "convenient while training RNNs". 
             # (source: https://stackoverflow.com/questions/48001598/why-do-we-need-to-call-zero-grad-in-pytorch)
             model.zero_grad()        
 
             # Perform a forward pass (evaluate the model on this training batch).
-            # This will return the loss (rather than the model output) because we
-            # have provided the `labels`.
+            # This will return the loss (rather than the model output) because we have provided the `labels`.
             # The documentation for this `model` function is here: 
             # https://huggingface.co/transformers/v2.2.0/model_doc/bert.html#transformers.BertForSequenceClassification
             outputs = model(b_input_ids, 
@@ -369,51 +358,51 @@ def main(args):
                         attention_mask=b_input_mask, 
                         labels=b_labels)
 
-            # The call to `model` always returns a tuple, so we need to pull the 
-            # loss value out of the tuple.
+            # The call to `model` always returns a tuple, so we need to pull the loss value out of the tuple.
             loss = outputs[0]
 
-            # Accumulate the training loss over all of the batches so that we can
-            # calculate the average loss at the end. `loss` is a Tensor containing a
-            # single value; the `.item()` function just returns the Python value 
-            # from the tensor.
-            total_loss += loss.item()
-            tb_writer.add_scalar('Loss', loss.item(), step)
+            # Accumulate the training loss over all of the batches so that we can calculate the average loss at the end. 
+            # `loss` is a Tensor containing a single value; the `.item()` function just returns the Python value from the tensor.
+            tr_loss += loss.item()
 
             # Perform a backward pass to calculate the gradients.
             loss.backward()
 
-            # Clip the norm of the gradients to 1.0.
-            # This is to help prevent the "exploding gradients" problem.
+            # Clip the norm of the gradients to 1.0. This is to help prevent the "exploding gradients" problem.
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
             # Update parameters and take a step using the computed gradient.
-            # The optimizer dictates the "update rule"--how the parameters are
-            # modified based on their gradients, the learning rate, etc.
+            # The optimizer dictates the "update rule"--how the parameters are modified based on their gradients, the learning rate, etc.
             optimizer.step()
 
             # Update the learning rate.
             scheduler.step()
+            
+            # Update global step.
+            global_step += 1
+            
+            # Progress update every 'logging_steps' batches.
+            if args.logging_steps > 0 and global_step % args.logging_steps == 0:
+                
+                # Calculate elapsed time in minutes.
+                elapsed = format_time(time.time() - t0)
+                
+                # Compute average training loss over the last 'logging_steps'. Write it to Tensorboard.
+                loss_scalar = (tr_loss - logging_loss) / args.logging_steps
+                tb_writer.add_scalar('Loss', loss_scalar, global_step)
+                logging_loss = tr_loss
+                
+                # Print the log.
+                print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.    Training loss: {:.2f}'.format(global_step, len(train_dataloader), elapsed, loss_scalar))
 
-        # Calculate the average loss over the training data.
-        avg_train_loss = total_loss / len(train_dataloader)            
-
-        # Store the loss value for plotting the learning curve.
-        loss_values.append(avg_train_loss)
-
-        print("")
-        print("  Average training loss: {0:.2f}".format(avg_train_loss))
-        print("  Training epcoh took: {:}".format(format_time(time.time() - t0)))
+        print("  Training epoch took: {:}\n".format(format_time(time.time() - t0)))
 
         # ========================================
         #               Validation
         # ========================================
         # After the completion of each training epoch, measure our performance on
         # our validation set.
-
-        print("")
-        print("Running Validation...")
-
+        print("\nRunning Validation...\n")
         t0 = time.time()
 
         # Put the model in evaluation mode--the dropout layers behave differently
@@ -466,23 +455,25 @@ def main(args):
             nb_eval_steps += 1
 
         # Report the final accuracy for this validation run.
-        print("  Accuracy: {0:.2f}".format(eval_accuracy/nb_eval_steps))
+        accuracy_scalar = eval_accuracy/nb_eval_steps
+        tb_writer.add_scalar('Accuracy', accuracy_scalar, epoch_i)
+        print("  Accuracy: {0:.2f}".format(accuracy_scalar))
         print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
     print("\nTraining complete!\n")
     
-    print("Saving model to %s...\n" % output_dir)
+    print("Saving model to {}...\n.".format(args.output_dir))
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
     # Save a trained model, configuration and tokenizer using `save_pretrained()`.
     # They can then be reloaded using `from_pretrained()`
     model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
-    model_to_save.save_pretrained(output_dir)
-    tokenizer.save_pretrained(output_dir)
+    model_to_save.save_pretrained(args.output_dir)
+    tokenizer.save_pretrained(args.output_dir)
 
     # Good practice: save your training arguments together with the trained model
-    torch.save(args, os.path.join(output_dir, 'training_args.bin'))
+    torch.save(args, os.path.join(args.output_dir, 'training_args.bin'))
     
 
 if __name__=="__main__":
