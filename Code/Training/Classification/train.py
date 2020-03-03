@@ -29,15 +29,15 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--filepath",
-                        default='/raid/antoloui/Master-thesis/Data/Classification/cam_query_to_doctype.csv',
+                        default='',
                         type=str,
-                        #required=True,
+                        required=True,
                         help="Path of the file containing the sentences to encode.",
     )
     parser.add_argument("--model_name_or_path",
-                        default= "../models/netbert/checkpoint-830000/", #'bert-base-cased',
+                        default='',
                         type=str,
-                        #required=True,
+                        required=True,
                         help="Path to pre-trained model or shortcut name",
     )
     parser.add_argument("--max_seq_length",
@@ -393,7 +393,7 @@ def main(args):
                 logging_loss = tr_loss
                 
                 # Print the log.
-                print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.    Training loss: {:.2f}'.format(global_step, len(train_dataloader), elapsed, loss_scalar))
+                print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.    Training loss: {:.2f}'.format(step+1, len(train_dataloader), elapsed, loss_scalar))
 
         print("  Training epoch took: {:}\n".format(format_time(time.time() - t0)))
 
@@ -456,8 +456,8 @@ def main(args):
 
         # Report the final accuracy for this validation run.
         accuracy_scalar = eval_accuracy/nb_eval_steps
-        tb_writer.add_scalar('Accuracy', accuracy_scalar, epoch_i)
-        print("  Accuracy: {0:.2f}".format(accuracy_scalar))
+        tb_writer.add_scalar('Accuracy', accuracy_scalar, epoch_i + 1)
+        print("  Accuracy: {0:.4f}".format(accuracy_scalar))
         print("  Validation took: {:}".format(format_time(time.time() - t0)))
 
     print("\nTraining complete!\n")

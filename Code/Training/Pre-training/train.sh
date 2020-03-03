@@ -9,7 +9,7 @@ python run_language_modeling.py \
     --do_train \
     --train_data_file=$TRAIN_FILE \
     --per_gpu_train_batch_size=14 \
-    --num_train_epochs 20 \
+    --num_train_epochs=20 \
     --warmup_steps=1000 \
     --save_steps=1000 \
     --save_total_limit=10 \
