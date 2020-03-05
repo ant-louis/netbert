@@ -503,17 +503,17 @@ def main(args):
         # Report results.
         result = compute_metrics(preds, out_label_ids, categories)
         
-        tb_writer.add_scalar('Accuracy', result[0], epoch_i + 1)
-        print("  Test/Accuracy: {0:.4f}".format(result[0]))
+        tb_writer.add_scalar('Test/Accuracy', result[0], epoch_i + 1)
+        print("  Accuracy: {0:.4f}".format(result[0]))
         
-        tb_writer.add_scalar('Recall', result[1], epoch_i + 1)
-        print("  Test/Recall: {0:.4f}".format(result[1]))
+        tb_writer.add_scalar('Test/Recall', result[1], epoch_i + 1)
+        print("  Recall: {0:.4f}".format(result[1]))
         
-        tb_writer.add_scalar('Precision', result[2], epoch_i + 1)
-        print("  Test/Precision: {0:.4f}".format(result[2]))
+        tb_writer.add_scalar('Test/Precision', result[2], epoch_i + 1)
+        print("  Precision: {0:.4f}".format(result[2]))
         
-        tb_writer.add_scalar('F1 score', result[3], epoch_i + 1)
-        print("  Test/F1 score: {0:.4f}".format(result[3]))
+        tb_writer.add_scalar('Test/F1 score', result[3], epoch_i + 1)
+        print("  F1 score: {0:.4f}".format(result[3]))
         
         plot_confusion_matrix(result[4], categories, args.output_dir)
         print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
