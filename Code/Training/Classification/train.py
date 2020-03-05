@@ -5,14 +5,19 @@ import time
 import datetime
 import random
 import os
+import itertools
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sn
+
 import torch
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, classification_report, confusion_matrix
 
 from transformers import BertTokenizer, BertForSequenceClassification, BertConfig
 from transformers import AdamW, get_linear_schedule_with_warmup
@@ -98,7 +103,7 @@ def parse_arguments():
     return arguments
 
 
-def load_data(filepath):
+def load_data(filepath, interest_classes=None):
     """
     Filepath must be a csv file with 2 columns:
     - First column is a set of sentences;
@@ -115,8 +120,12 @@ def load_data(filepath):
     # Rename columns.
     df.columns = ['Sentence', 'Class']
 
+    # Keep only rows with class of interest.
+    if interest_classes is not None:
+        df = df[df.Class.isin(interest_classes)]
+    
     # Add categories ids column.
-    categories = df.Class.unique()  # Get the categories.
+    categories = df.Class.unique()
     df['Class_id'] = df.apply(lambda row: np.where(categories == row.Class)[0][0], axis=1)
     return df, categories
 
@@ -199,14 +208,52 @@ def create_dataloader(train_inputs, validation_inputs, train_labels, validation_
     return train_data, train_sampler, train_dataloader, validation_data, validation_sampler, validation_dataloader
 
 
-def flat_accuracy(preds, labels):
+def compute_metrics(preds, labels, classes):
     """
-    Calculate the accuracy of our predictions vs labels
+    Compute metrics for the classification task.
     """
-    pred_flat = np.argmax(preds, axis=1).flatten()
-    labels_flat = labels.flatten()
-    return np.sum(pred_flat == labels_flat) / len(labels_flat)
+    # Accuracy.
+    accuracy = accuracy_score(y_true=labels, y_pred=preds)  #accuracy = (preds==labels).mean()
+    
+    # NB: Averaging methods:
+    #  - "macro" simply calculates the mean of the binary metrics, giving equal weight to each class.
+    #  - "weighted" accounts for class imbalance by computing the average of binary metrics in which each class’s score is weighted by its presence in the true data sample.
+    #  - "micro" gives each sample-class pair an equal contribution to the overall metric.
+    # Precision.
+    precision = precision_score(y_true=labels, y_pred=preds, average='macro')
+    
+    # Recall.
+    recall = recall_score(y_true=labels, y_pred=preds, average='macro')
+    
+    # F1 score.
+    f1 = f1_score(y_true=labels, y_pred=preds, average='macro')
+    
+    # Confusion matrix.
+    conf_matrix = confusion_matrix(y_true=labels, y_pred=preds, normalize='true', labels=range(len(classes)))
+    return (accuracy, precision, recall, f1, conf_matrix)
 
+
+def plot_confusion_matrix(cm, classes, outdir):
+    """
+    This function prints and plots the confusion matrix.
+    """
+    df_cm = pd.DataFrame(cm, index=classes, columns=classes)
+    
+    plt.figure(figsize = (10,7))
+    ax = sn.heatmap(df_cm, annot=True)
+    
+    ax.set_xticklabels(ax.get_xticklabels(), fontsize=8, horizontalalignment='right', rotation=45) 
+    ax.set_yticklabels(ax.get_yticklabels(), fontsize=8)
+    
+    plt.title('Confusion matrix', fontsize=18)
+    plt.ylabel('True labels', fontsize=12)
+    plt.xlabel('Predicted labels', fontsize=12)
+    plt.tight_layout()
+    
+    plt.savefig(outdir+"confusion_matrix.png")
+    plt.close()
+    return
+    
 
 def format_time(elapsed):
     '''
@@ -233,7 +280,14 @@ def main(args):
     print("\n========================================")
     print('               Load data                ')
     print("========================================\n")
-    df, categories = load_data(args.filepath)
+    classes_of_interest = ['Command References',
+                           'Data Sheets',
+                           'Configuration (Guides, Examples & TechNotes)',
+                           'Install & Upgrade Guides',
+                           'Release Notes',
+                           'Maintain & Operate (Guides & TechNotes)',
+                           'End User Guides']
+    df, categories = load_data(args.filepath, classes_of_interest)
     sentences = df.Sentence.values  # Get all sentences.
     labels = df.Class_id.values  # Get the associated labels.
     
@@ -382,18 +436,18 @@ def main(args):
             global_step += 1
             
             # Progress update every 'logging_steps' batches.
-            if args.logging_steps > 0 and global_step % args.logging_steps == 0:
+            if args.logging_steps > 0 and step != 0 and step % args.logging_steps == 0:
                 
                 # Calculate elapsed time in minutes.
                 elapsed = format_time(time.time() - t0)
                 
                 # Compute average training loss over the last 'logging_steps'. Write it to Tensorboard.
                 loss_scalar = (tr_loss - logging_loss) / args.logging_steps
-                tb_writer.add_scalar('Loss', loss_scalar, global_step)
+                tb_writer.add_scalar('Train/Loss', loss_scalar, global_step)
                 logging_loss = tr_loss
                 
                 # Print the log.
-                print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.    Training loss: {:.2f}'.format(step+1, len(train_dataloader), elapsed, loss_scalar))
+                print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.    Training loss: {:.2f}'.format(step, len(train_dataloader), elapsed, loss_scalar))
 
         print("  Training epoch took: {:}\n".format(format_time(time.time() - t0)))
 
@@ -404,61 +458,65 @@ def main(args):
         # our validation set.
         print("\nRunning Validation...\n")
         t0 = time.time()
-
-        # Put the model in evaluation mode--the dropout layers behave differently
-        # during evaluation.
-        model.eval()
-
-        # Tracking variables 
-        eval_loss, eval_accuracy = 0, 0
-        nb_eval_steps, nb_eval_examples = 0, 0
+        
+        # Tracking variables
+        nb_eval_steps = 0
+        preds = None
+        out_label_ids = None
 
         # Evaluate data for one epoch
         for batch in validation_dataloader:
+            
+            # Put the model in evaluation mode--the dropout layers behave differently during evaluation.
+            model.eval()
 
-            # Add batch to GPU
-            batch = tuple(t.to(device) for t in batch)
+            # Add batch to GPU.
+            b_input_ids, b_input_mask, b_labels = tuple(t.to(device) for t in batch)
 
-            # Unpack the inputs from our dataloader
-            b_input_ids, b_input_mask, b_labels = batch
-
-            # Telling the model not to compute or store gradients, saving memory and
-            # speeding up validation
+            # Telling the model not to compute or store gradients, saving memory and speeding up validation
             with torch.no_grad():        
 
                 # Forward pass, calculate logit predictions.
-                # This will return the logits rather than the loss because we have
-                # not provided labels.
-                # token_type_ids is the same as the "segment ids", which 
-                # differentiates sentence 1 and 2 in 2-sentence tasks.
-                # The documentation for this `model` function is here: 
-                # https://huggingface.co/transformers/v2.2.0/model_doc/bert.html#transformers.BertForSequenceClassification
+                # This will return the logits rather than the loss because we have not provided labels.
+                # token_type_ids is the same as the "segment ids", which differentiates sentence 1 and 2 in 2-sentence tasks.
                 outputs = model(b_input_ids, 
                                 token_type_ids=None, 
                                 attention_mask=b_input_mask)
 
-            # Get the "logits" output by the model. The "logits" are the output
-            # values prior to applying an activation function like the softmax.
+            # Get the "logits" output by the model. The "logits" are the output values prior to applying an activation function like the softmax.
             logits = outputs[0]
 
-            # Move logits and labels to CPU
-            logits = logits.detach().cpu().numpy()
-            label_ids = b_labels.to('cpu').numpy()
-
-            # Calculate the accuracy for this batch of test sentences.
-            tmp_eval_accuracy = flat_accuracy(logits, label_ids)
-
-            # Accumulate the total accuracy.
-            eval_accuracy += tmp_eval_accuracy
-
+            # Move logits and labels to CPU and store them.
+            if preds is None:
+                preds = logits.detach().cpu().numpy()
+                out_label_ids = b_labels.detach().cpu().numpy()
+            else:
+                preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
+                out_label_ids = np.append(out_label_ids, b_labels.detach().cpu().numpy(), axis=0)
+                
             # Track the number of batches
             nb_eval_steps += 1
-
-        # Report the final accuracy for this validation run.
-        accuracy_scalar = eval_accuracy/nb_eval_steps
-        tb_writer.add_scalar('Accuracy', accuracy_scalar, epoch_i + 1)
-        print("  Accuracy: {0:.4f}".format(accuracy_scalar))
-        print("  Validation took: {:}".format(format_time(time.time() - t0)))
+            
+        # Take the max predicitions.
+        preds = np.argmax(preds, axis=1)
+        
+        # Report results.
+        result = compute_metrics(preds, out_label_ids, categories)
+        
+        tb_writer.add_scalar('Accuracy', result[0], epoch_i + 1)
+        print("  Test/Accuracy: {0:.4f}".format(result[0]))
+        
+        tb_writer.add_scalar('Recall', result[1], epoch_i + 1)
+        print("  Test/Recall: {0:.4f}".format(result[1]))
+        
+        tb_writer.add_scalar('Precision', result[2], epoch_i + 1)
+        print("  Test/Precision: {0:.4f}".format(result[2]))
+        
+        tb_writer.add_scalar('F1 score', result[3], epoch_i + 1)
+        print("  Test/F1 score: {0:.4f}".format(result[3]))
+        
+        plot_confusion_matrix(result[4], categories, args.output_dir)
+        print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
 
     print("\nTraining complete!\n")
     
