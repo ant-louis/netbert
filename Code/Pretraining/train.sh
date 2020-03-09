@@ -2,6 +2,7 @@
 export TRAIN_FILE=/raid/antoloui/Master-thesis/Data/Cleaned/train.raw
 export OUT_DIR=./output/base_cased/
 export DEV_FILE=/raid/antoloui/Master-thesis/Data/Cleaned/dev.raw
+export CACHE=../_cache
 
 python run_language_modeling.py \
     --model_type=bert \
@@ -17,6 +18,6 @@ python run_language_modeling.py \
     --mlm_probability=0.15 \
     --output_dir=$OUT_DIR \
     --overwrite_output_dir \
-    --cache_dir=./cache \
+    --cache_dir=$CACHE \
     --do_eval \
     --eval_data_file=$DEV_FILE |& tee ./output/logs/bert_base_cased.txt
