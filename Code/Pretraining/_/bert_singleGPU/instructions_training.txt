@@ -1,0 +1,49 @@
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+DATA GENERATION
+---------------
+Here's how to run the data generation:
+- The input is a plain text file, with one sentence per line. You can perform sentence segmentation with an off-the-shelf NLP toolkit such as spaCy.
+- Documents are delimited by empty lines. 
+- The output is a set of tf.train.Examples serialized into TFRecord file format.
+
+NB: This script stores all of the examples for the entire input file in memory, so for large data files you should shard the input file and call the script multiple times. (You can pass in a file glob to run_pretraining.py, e.g., tf_examples.tfrecord*.)
+
+NB2: The max_predictions_per_seq is the maximum number of masked LM predictions per sequence. You should set this to around max_seq_length * masked_lm_prob (the script doesn't do that automatically because the exact value needs to be passed to both scripts).
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+python create_pretraining_data.py \
+  --input_file=../../Data/Preprocessed/output.txt \
+  --output_file=../../Data/bert/test/tf_examples.tfrecord \
+  --vocab_file=./models/base_cased/vocab.txt \
+  --do_lower_case=False \
+  --max_seq_length=128 \
+  --max_predictions_per_seq=20 \
+  --masked_lm_prob=0.15 \
+  --random_seed=12345 \
+  --dupe_factor=5
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+PRE_TRAINING
+------------
+Here's how to run the pre-training:
+- The max_seq_length and max_predictions_per_seq parameters passed to run_pretraining.py must be the same as create_pretraining_data.py.
+- The learning rate we used in the paper was 1e-4. However, if you are doing additional steps of pre-training starting from an existing BERT checkpoint, you should use a smaller learning rate (e.g., 2e-5).
+
+NB: One good recipe is to pre-train for, say, 90,000 steps with a sequence length of 128 and then for 10,000 additional steps with a sequence length of 512. !!Note that this does require generating the data twice with different values of max_seq_length.!! Also note that wit ha sequence length of 512 I should change my train_batch_size to 6.
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+python run_pretraining.py \
+  --input_file=../../Data/bert/L128/tf_examples.tfrecord* \
+  --output_dir=./pretraining_output_megafat \
+  --do_train=True \
+  --do_eval=False \
+  --bert_config_file=./models/base_cased/bert_config.json \
+  --init_checkpoint=./models/base_cased/bert_model.ckpt \
+  --train_batch_size=128 \
+  --max_seq_length=128 \
+  --max_predictions_per_seq=20 \
+  --num_train_steps=1615550 \
+  --num_warmup_steps=10 \
+  --learning_rate=2e-5 |& tee -a pretraining_output_megafat/info.txt
