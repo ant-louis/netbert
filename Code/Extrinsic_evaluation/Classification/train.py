@@ -17,7 +17,7 @@ from torch.utils.data import TensorDataset, DataLoader, RandomSampler, Sequentia
 
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix, matthews_corrcoef
 
 from transformers import BertTokenizer, BertForSequenceClassification, BertConfig
 from transformers import AdamW, get_linear_schedule_with_warmup
@@ -66,7 +66,7 @@ def parse_arguments():
                         help="Batch size per GPU/CPU for training. For fine-tuning BERT on a specific task, the authors recommend a batch size of 16 or 32.",
     )
     parser.add_argument("--cache_dir",
-                        default='../cache/',
+                        default='../_cache/',
                         type=str,
                         help="Where do you want to store the pre-trained models downloaded from s3.",
     )
@@ -228,9 +228,13 @@ def compute_metrics(preds, labels, classes):
     # F1 score.
     f1 = f1_score(y_true=labels, y_pred=preds, average='macro')
     
+    # Matthews correlation coefficient (MCC): used for imbalanced classes.
+    mcc = matthews_corrcoef(y_true=labels, y_pred=preds)
+    
     # Confusion matrix.
     conf_matrix = confusion_matrix(y_true=labels, y_pred=preds, normalize='true', labels=range(len(classes)))
-    return (accuracy, precision, recall, f1, conf_matrix)
+    
+    return (accuracy, precision, recall, f1, mcc, conf_matrix)
 
 
 def plot_confusion_matrix(cm, classes, outdir):
@@ -515,7 +519,10 @@ def main(args):
         tb_writer.add_scalar('Test/F1 score', result[3], epoch_i + 1)
         print("  F1 score: {0:.4f}".format(result[3]))
         
-        plot_confusion_matrix(result[4], categories, args.output_dir)
+        tb_writer.add_scalar('Test/MCC', result[4], epoch_i + 1)
+        print("  MCC: {0:.4f}".format(result[4]))
+        
+        plot_confusion_matrix(result[5], categories, args.output_dir)
         print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
 
     print("\nTraining complete!\n")
