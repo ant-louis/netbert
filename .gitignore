@@ -2,11 +2,10 @@
 # Data
 #----------------
 Data/*
-Code/Training/GLUE/GLUE_data/*
-Code/Training/STS/data/*
-Code/Training/Summarization/data/*
-Code/Training/QA/UnsupervisedQA/data/*
-Code/Training/Embedding/data/*
+Code/Extrinsic_evaluation/GLUE/GLUE_data/*
+Code/Extrinsic_evaluation/Summarization/data/*
+Code/Extrinsic_evaluation/QA/UnsupervisedQA/data/*
+Code/Intrinsic_evaluation/Embedding/data/*
 
 
 #----------------
@@ -22,43 +21,42 @@ __pycache__
 #--------------------
 # Model checkpoints
 #-------------------
-Code/Training/-/bert_singleGPU/models/*
-Code/Training/-/bert_multiGPU/MegatronLM/model_checkpoints/*
-Code/Training/models/*
-Code/Search/models/*
+Code/Pretraining/_/bert_singleGPU/models/*
+Code/Pretraining/_/bert_multiGPU/MegatronLM/model_checkpoints/*
+Code/_models/*
+Code/_/Search/models/*
 
 
 #-------------------
 # Training output
 #-------------------
-Code/Training/-/bert_singleGPU/pretraining_output_fullfat/*
-Code/Training/-/bert_singleGPU/pretraining_output_megafat/*
-Code/Training/output/*
-Code/Training/GLUE/output/*
-Code/Training/STS/output/*
-Code/Training/Summarization/output/*
-Code/Training/NER/output/*
-Code/Training/Classification/output/*
+Code/Pretraining/_/bert_singleGPU/pretraining_output_fullfat/*
+Code/Pretraining/_/bert_singleGPU/pretraining_output_megafat/*
+Code/Pretraining/output/*
+Code/Extrinsic_evaluation/GLUE/output/*
+Code/Extrinsic_evaluation/Summarization/output/*
+Code/Extrinsic_evaluation/NER/output/*
+Code/Extrinsic_evaluation/Classification/output/*
 
 
 #----------------
 # Cache
 #----------------
-Code/Training/-/bert_multiGPU/MegatronLM/cache/*
-Code/Training/cache/*
+Code/Pretraining/_/bert_multiGPU/MegatronLM/cache/*
+Code/_cache/*
 
 
 #---------------
 # Tensorboard
 #---------------
-Code/Training/runs/*
-Code/Training/GLUE/runs/*
-Code/Training/NER/runs/*
-Code/Training/Classification/runs/*
-Code/Training/Embedding/runs/*
+Code/Pretraining/runs/*
+Code/Extrinsic_evaluation/GLUE/runs/*
+Code/Extrinsic_evaluation/NER/runs/*
+Code/Extrinsic_evaluation/Classification/runs/*
+Code/Intrinsic_evaluation/Embedding/runs/*
 
 #-------------------
 # Other
 #-------------------
-Code/-/transformers/*
-Code/-/bertsearch/*
+Code/_/transformers/*
+Code/_/bertsearch/*

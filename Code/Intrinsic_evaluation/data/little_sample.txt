@@ -1,0 +1,7 @@
+See Discovery Life Cycle for information on how to disable ICMP verification.
+Gets all the defined credential profiles, based on the IP address.
+Checks whether the SNMP credentials match.
+If the mandatory credentials are not defined, discovery fails.
+See Managing Device Credentials for information on required device credentials.
+If you are using more than one CTS-Manager, you must configure in a cluster for the Prime Collaboration application to manage.
+Before performing the discovery, enter the Primary Server IP address and hot standby or secondary server details in Operate > Device Work Center > Manage CTS-MAN/TMS and/or CTX Cluster.
