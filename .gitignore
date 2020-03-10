@@ -53,7 +53,7 @@ Code/Pretraining/runs/*
 Code/Extrinsic_evaluation/GLUE/runs/*
 Code/Extrinsic_evaluation/NER/runs/*
 Code/Extrinsic_evaluation/Classification/runs/*
-Code/Intrinsic_evaluation/Embedding/runs/*
+Code/Intrinsic_evaluation/runs/*
 
 #-------------------
 # Other
