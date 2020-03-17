@@ -45,13 +45,12 @@ def parse_arguments():
                         help="Where do you want to store the pre-trained models downloaded from s3.",
     )
     parser.add_argument("--batch_size",
-                        default=100,
+                        default=512,
                         type=int, 
                         help="Batch size per GPU/CPU."
     )
     arguments, _ = parser.parse_known_args()
     return arguments
-
 
 
 def format_time(elapsed):
@@ -65,7 +64,6 @@ def format_time(elapsed):
     return str(datetime.timedelta(seconds=elapsed_rounded))
 
 
-
 def load_sentences(filepath):
     """
     Given a file of raw sentences, return the list of these sentences.
@@ -75,10 +73,58 @@ def load_sentences(filepath):
     return sentences
 
 
+def gather_sentence_outputs(outputs):
+    """
+    'outputs' is a list of 'output' of each GPU. As a reminder, each 'output' is a 3-tuple where:
+        - output[0] is the last_hidden_state, i.e a tensor of shape (batch_size, sequence_length, hidden_size).
+        - output[1] is the pooler_output, i.e. a tensor of shape (batch_size, hidden_size) being the last layer hidden-state of the first token of the sequence (classification token).
+        - output[2] are all hidden_states, i.e. a 13-tuple of torch tensors of shape (batch_size, sequence_length, hidden_size): 12 encoders-outputs + initial embedding outputs.
+    """
+    # Extract the last_hidden_state in each GPU output ('gathered' is a list of nb_gpu x torch tensors)
+    gathered = [output[0] for output in outputs]
+    
+    # Concatenate the samples for that batch.
+    gathered = torch.cat(gathered, dim=0)
+    return gathered
+
+
+def gather_word_outputs(outputs):
+    """
+    'outputs' is a list of 'output' of each GPU. As a reminder, each 'output' is a 3-tuple where:
+        - output[0] is the last_hidden_state, i.e a tensor of shape (batch_size, sequence_length, hidden_size).
+        - output[1] is the pooler_output, i.e. a tensor of shape (batch_size, hidden_size) being the last layer hidden-state of the first token of the sequence (classification token).
+        - output[2] are all hidden_states, i.e. a 13-tuple of torch tensors of shape (batch_size, sequence_length, hidden_size): 12 encoders-outputs + initial embedding outputs.
+    """
+    # Extract all hidden_states in each GPU output ('gathered' is a list of nb_gpu x 13-tuple)
+    gathered = [output[2] for output in outputs]
+    
+    # Concatenate the tensors for all layers. We use `stack` here to create a new dimension in the tensor.
+    gathered = [torch.stack(output, dim=0) for output in gathered]
+    
+    # Switch around the “layers” and “tokens” dimensions with permute.
+    gathered = [output.permute(1,2,0,3) for output in gathered]
+    
+    # Concatenate the samples for that batch.
+    gathered = torch.cat(gathered, dim=0)
+    return gathered
+
 
 def encode_sentences(args, sentences):
     """
+    Encoding sentences with CPU/GPU(s).
+    
+    Note that here 'parallel.DataParallelModel' is used, where 'parallel.py' is a
+    script imported from the ' PyTorch-Encoding' package: https://github.com/zhanghang1989/PyTorch-Encoding
+    The DataParallelModel deals better with balanaced load on multi-GPU than torch.nn.DataParallel.
+    The max batch size here is 640.
+    
+    However, once again, the utilisation of the GPUs is very volatile (never at 100% all the time).
     """
+    # Create dataframe for storing embeddings.
+    
+    df = pd.DataFrame(columns=cols)
+    df['Sentence'] = None
+    
     print("   Loading pretrained model/tokenizer...")
     tokenizer = BertTokenizer.from_pretrained(args.model_name_or_path)
     model = BertModel.from_pretrained(args.model_name_or_path, output_hidden_states=True, cache_dir=args.cache_dir) # Will output all hidden_states.
@@ -90,14 +136,8 @@ def encode_sentences(args, sentences):
         parallel_model = parallel.DataParallelModel(model)
     parallel_model.to(device)
     
-    
     print("   Encoding sentences...")
-    
-    # Create dataframe for storing embeddings.
-    cols = ['feat'+str(i+1) for i in range(768)]
-    df = pd.DataFrame(columns=cols)
-    df['Sentence'] = None
-    
+    all_embeddings = []
     iterator = range(0, len(sentences), args.batch_size)
     for batch_idx in tqdm(iterator, desc="Batches"):
         
@@ -129,40 +169,25 @@ def encode_sentences(args, sentences):
         # Encode batch.
         parallel_model.eval()
         with torch.no_grad():
-            # output is a 2-tuple where:
+            # outputs is a list of 3-tuples where each 3-tuple is such that:
             #  - output[0] is the last_hidden_state, i.e a tensor of shape (batch_size, sequence_length, hidden_size).
             #  - output[1] is the pooler_output, i.e. a tensor of shape (batch_size, hidden_size) being the last layer hidden-state of the first token of the sequence (classification token).
             #  - output[2] are all hidden_states, i.e. a 13-tuple of torch tensors of shape (batch_size, sequence_length, hidden_size): 12 encoders-outputs + initial embedding outputs.
-            output = parallel_model(input_ids, attention_mask=attention_mask)
-        
-        print(len(output))
-        # Gather all the tensors on the cpu.
-        gathered_output = gather(output)
-        
-        print(type(gathered_output))
-        
-        
-        # Concatenate the tensors for all layers. We use `stack` here to create a new dimension in the tensor.
-        hidden_states = torch.stack(output[2], dim=0)
+            outputs = parallel_model(input_ids, attention_mask=attention_mask)
+            
+        # Gather outputs from the different GPUs.
+        last_hidden_states = gather_sentence_outputs(outputs)
 
-        # Switch around the “layers” and “tokens” dimensions with permute.
-        hidden_states = hidden_states.permute(1,2,0,3)
-        
         # For each sentence, take the embeddings of its word from the last layer and represent that sentence by their average.
-        last_hidden_states = output[0].detach().cpu()
-        sentence_embeddings = [torch.mean(embeddings, dim=0).numpy() for embeddings in last_hidden_states]
-        sentence_embeddings = np.array(sentence_embeddings)
-    
-        # Append batch dataframe to full dataframe.
-        batch_df = pd.DataFrame(data=sentence_embeddings[:,:], columns=cols)
-        batch_df['Sentence'] = batch_sentences
-        df = pd.concat([df, batch_df], axis=0)
+        sentence_embeddings = [torch.mean(embeddings, dim=0).detach().cpu().numpy() for embeddings in last_hidden_states]
+        all_embeddings.extend(sentence_embeddings)
         
+    # Create dataframe for storing embeddings.
+    all_embeddings = np.array(all_embeddings)
+    cols = ['feat'+str(i+1) for i in range(all_embeddings.shape[1])]
+    df = pd.DataFrame(data=all_embeddings[:,:], columns=cols)
+    df['Sentence'] = sentences
     return df
-
-
-
-
 
 
 def main(args):
@@ -189,8 +214,6 @@ def main(args):
     output_path = args.output_dir + filename + '.csv'
     df.to_csv(output_path, sep=',', encoding='utf-8', float_format='%.10f', decimal='.', index=False)
     
-
-
 
 if __name__=="__main__":
     args = parse_arguments()

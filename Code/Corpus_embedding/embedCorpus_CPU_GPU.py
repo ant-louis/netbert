@@ -50,7 +50,6 @@ def parse_arguments():
     return arguments
 
 
-
 def format_time(elapsed):
     '''
     Takes a time in seconds and returns a string hh:mm:ss
@@ -62,7 +61,6 @@ def format_time(elapsed):
     return str(datetime.timedelta(seconds=elapsed_rounded))
 
 
-
 def load_sentences(filepath):
     """
     Given a file of raw sentences, return the list of these sentences.
@@ -70,7 +68,6 @@ def load_sentences(filepath):
     with open(filepath) as myfile:
         sentences = [line for line in myfile]          
     return sentences
-
 
 
 def encode_sentences(args, sentences):
@@ -84,6 +81,9 @@ def encode_sentences(args, sentences):
     Although the other GPUs are not fully loaded, one can not increase the
     batch size as it would result in an 'out of memory' error in the main GPU.
     Here, the max batch size is 128.
+    
+    Note that the GPU utilisation with 'torch.nn.DataParallel' is very volatile.
+    GPUs are never running at 100%, which slows the process.
     """
     # Create dataframe for storing embeddings.
     cols = ['feat'+str(i+1) for i in range(768)]
@@ -141,12 +141,6 @@ def encode_sentences(args, sentences):
             #  - output[2] are all hidden_states, i.e. a 13-tuple of torch tensors of shape (batch_size, sequence_length, hidden_size): 12 encoders-outputs + initial embedding outputs.
             output = model(input_ids, attention_mask=attention_mask)
         
-        # Concatenate the tensors for all layers. We use `stack` here to create a new dimension in the tensor.
-        hidden_states = torch.stack(output[2], dim=0)
-
-        # Switch around the “layers” and “tokens” dimensions with permute.
-        hidden_states = hidden_states.permute(1,2,0,3)
-        
         # For each sentence, take the embeddings of its word from the last layer and represent that sentence by their average.
         last_hidden_states = output[0].detach().cpu()
         sentence_embeddings = [torch.mean(embeddings, dim=0).numpy() for embeddings in last_hidden_states]
@@ -155,7 +149,7 @@ def encode_sentences(args, sentences):
         # Append batch dataframe to full dataframe.
         batch_df = pd.DataFrame(data=sentence_embeddings[:,:], columns=cols)
         batch_df['Sentence'] = batch_sentences
-        df = pd.concat([df, batch_df], axis=0)
+        df = pd.concat([df, batch_df], axis=0, ignore_index=True)
         
     return df
 
