@@ -1,7 +1,9 @@
 import os
+import glob
 import time
 import datetime
 import argparse
+import logging
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -9,10 +11,10 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-import torch
 from transformers import BertModel, BertTokenizer
 from keras.preprocessing.sequence import pad_sequences
 
+import torch
 import parallel
 
 
@@ -21,18 +23,18 @@ def parse_arguments():
     Parser.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--filepath", 
+    parser.add_argument("--input_dir", 
                         type=str, 
-                        default='/raid/antoloui/Master-thesis/Data/Cleaned/dev.raw',
-                        help="Path of the file containing the sentences to encode."
+                        default='/raid/antoloui/Master-thesis/Data/Cleaned/Splitted/',
+                        help="Path of the input directory."
                        )
     parser.add_argument("--output_dir", 
                         type=str, 
                         default='/raid/antoloui/Master-thesis/Data/Embeddings/',
-                        help="Path of the directory to save output."
+                        help="Path of the output directory."
                        )
     parser.add_argument("--model_name_or_path",
-                        default='/raid/antoloui/Master-thesis/Code/_models/netbert/checkpoint-1027000/',
+                        default='/raid/antoloui/Master-thesis/Code/_models/netbert/checkpoint-1825000/',
                         type=str,
                         #required=True,
                         help="Path to pre-trained model or shortcut name.",
@@ -119,39 +121,28 @@ def gather_word_outputs(outputs):
     return gathered
 
 
-def encode_sentences(args, sentences):
+def encode_sentences(sentences, tokenizer, model, device, batch_size):
     """
     Encoding sentences with CPU/GPU(s).
     
-    Note that here 'parallel.DataParallelModel' is used, where 'parallel.py' is a
-    script imported from the ' PyTorch-Encoding' package: https://github.com/zhanghang1989/PyTorch-Encoding
-    The DataParallelModel deals better with balanaced load on multi-GPU than torch.nn.DataParallel.
-    The max batch size here is 512.
-    
+    Note that here 'parallel.DataParallelModel' is used, where 'parallel.py' is a script imported
+    from the ' PyTorch-Encoding' package: https://github.com/zhanghang1989/PyTorch-Encoding
+    The DataParallelModel deals better with balanced load on multi-GPU than torch.nn.DataParallel,
+    allowing to significantly increase the batch size per GPU.
+
     However, once again, the utilisation of the GPUs is very volatile (never at 100% all the time).
     """
-    print("   Loading pretrained model/tokenizer...")
-    tokenizer = BertTokenizer.from_pretrained(args.model_name_or_path)
-    model = BertModel.from_pretrained(args.model_name_or_path, output_hidden_states=True, cache_dir=args.cache_dir) # Will output all hidden_states.
-    
-    print("   Setting up CUDA & GPU...")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    n_gpu = torch.cuda.device_count()
-    if n_gpu > 1:
-        parallel_model = parallel.DataParallelModel(model)
-    parallel_model.to(device)
-    
-    print("   Encoding sentences...")
     all_embeddings = []
-    iterator = range(0, len(sentences), args.batch_size)
-    for batch_idx in tqdm(iterator, desc="Batches"):
+    iterator = range(0, len(sentences), batch_size)
+    for batch_idx in tqdm(iterator, desc="   Batches"):
         
         # Get the batch.
         batch_start = batch_idx
-        batch_end = min(batch_start + args.batch_size, len(sentences))
+        batch_end = min(batch_start + batch_size, len(sentences))
         batch_sentences = sentences[batch_start:batch_end]
         
         # Tokenize each sentence of the batch.
+        logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)  # No warning on sample size (I deal with that below).
         tokenized = [tokenizer.encode(sent, add_special_tokens=True) for sent in batch_sentences]
         
         # Pad/Truncate sentences to max_len or 512.
@@ -172,13 +163,13 @@ def encode_sentences(args, sentences):
         attention_mask = attention_mask.to(device)
         
         # Encode batch.
-        parallel_model.eval()
+        model.eval()
         with torch.no_grad():
             # outputs is a list of 3-tuples where each 3-tuple is such that:
             #  - output[0] is the last_hidden_state, i.e a tensor of shape (batch_size, sequence_length, hidden_size).
             #  - output[1] is the pooler_output, i.e. a tensor of shape (batch_size, hidden_size) being the last layer hidden-state of the first token of the sequence (classification token).
             #  - output[2] are all hidden_states, i.e. a 13-tuple of torch tensors of shape (batch_size, sequence_length, hidden_size): 12 encoders-outputs + initial embedding outputs.
-            outputs = parallel_model(input_ids, attention_mask=attention_mask)
+            outputs = model(input_ids, attention_mask=attention_mask)
             
         # Gather outputs from the different GPUs.
         last_hidden_states = gather_sentence_outputs(outputs)
@@ -197,39 +188,49 @@ def encode_sentences(args, sentences):
 
 def main(args):
     """
-    Main function.
     """
     print("\n===================================================")
-    print("Loading sentences from {}...".format(args.filepath))
+    print("Loading pretrained model/tokenizer...")
     print("===================================================\n")
     t0 = time.time()
-    sentences = load_sentences(args.filepath)
-    print("   {} sentences loaded.  -  Took: {}".format(len(sentences), format_time(time.time() - t0)))
+    tokenizer = BertTokenizer.from_pretrained(args.model_name_or_path)
+    model = BertModel.from_pretrained(args.model_name_or_path, output_hidden_states=True, cache_dir=args.cache_dir) # Will output all hidden_states.
+    print("   Loaded checkpoint '{}'.  -  Took: {}".format(args.model_name_or_path, format_time(time.time() - t0)))
     
     print("\n===================================================")
-    print("Sorting sentences by length...")
+    print("Setting up CPU / CUDA & GPUs...")
     print("===================================================\n")
-    t0 = time.time()
-    sorted_sentences = sort_sentences(sentences)
-    #sorted_sentences = sorted_sentences[::-1]
-    print("   {} sentences sorted.  -  Took: {}".format(len(sentences), format_time(time.time() - t0)))
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    n_gpu = torch.cuda.device_count()
+    if n_gpu > 1:
+        model = parallel.DataParallelModel(model)
+    model.to(device)
+    print("   Using {}.\n".format(device))
     
     print("\n===================================================")
-    print("Encoding {} sentences...".format(len(sentences)))
+    print("Encoding sentences...")
     print("===================================================\n")
-    t0 = time.time()
-    df = encode_sentences(args, sorted_sentences)
-    elapsed = time.time() - t0
-    print("   {} sentences embedded. -  Took: {:}  ({:.2f} s/sentences)".format(len(sentences), format_time(elapsed), elapsed/len(sorted_sentences)))
-    
-    print("\n===================================================")
-    print("Saving dataframe to {}...".format(args.output_dir))
-    print("===================================================\n")
-    t0 = time.time()
-    filename = os.path.splitext(os.path.basename(args.filepath))[0]
-    output_path = args.output_dir + filename + '.csv'
-    df.to_csv(output_path, sep=',', encoding='utf-8', float_format='%.10f', decimal='.', index=False)
-    print("   Dataframe saved. -  Took: {}\n".format(format_time(time.time() - t0)))
+    files = glob.glob(args.input_dir + '*.raw')
+    for file in tqdm(files, desc="Files"):
+        print("   Loading sentences from {}...".format(file))
+        t0 = time.time()
+        sentences = load_sentences(file)
+        sorted_sentences = sort_sentences(sentences)
+        sorted_sentences = sorted_sentences[::-1]
+        print("   {} sentences loaded.  -  Took: {}".format(len(sentences), format_time(time.time() - t0)))
+
+        print("   Encoding sentences...")
+        t0 = time.time()
+        df = encode_sentences(sorted_sentences, tokenizer, model, device, args.batch_size)
+        elapsed = time.time() - t0
+        print("   {} sentences embedded. -  Took: {:}  ({:.2f} s/sentences)".format(len(sorted_sentences), format_time(elapsed), elapsed/len(sorted_sentences)))
+
+        print("   Saving dataframe to {}...".format(args.output_dir))
+        t0 = time.time()
+        filename = os.path.splitext(os.path.basename(file))[0]
+        output_path = args.output_dir + filename + '.csv'
+        df.to_csv(output_path, sep=',', encoding='utf-8', float_format='%.10f', decimal='.', index=False)
+        print("   Dataframe saved. -  Took: {}\n".format(format_time(time.time() - t0)))
     
 
 if __name__=="__main__":
