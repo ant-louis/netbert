@@ -42,7 +42,7 @@ def parse_arguments():
                         help="Where do you want to store the pre-trained models downloaded from s3.",
     )
     parser.add_argument("--batch_size",
-                        default=200, 
+                        default=128,
                         type=int, 
                         help="Batch size per GPU/CPU."
     )
@@ -75,25 +75,35 @@ def load_sentences(filepath):
 
 def encode_sentences(args, sentences):
     """
+    Encode corpus of sentences with CPU or GPU(s).
+    
+    Note that multi-GPU encoding is quite imbalanced due to the use
+    of 'torch.nn.DataParallel' which loads the model in the main GPU
+    but also gathers the output of all other GPUs back to the main one.
+    As a result, the main GPU is three times more loaded than the others.
+    Although the other GPUs are not fully loaded, one can not increase the
+    batch size as it would result in an 'out of memory' error in the main GPU.
+    Here, the max batch size is 128.
     """
-    print("   Loading pretrained model/tokenizer...")
-    tokenizer = BertTokenizer.from_pretrained(args.model_name_or_path)
-    model = BertModel.from_pretrained(args.model_name_or_path, output_hidden_states=True, cache_dir=args.cache_dir) # Will output all hidden_states.
-    
-    print("   Setting up CUDA and GPUs...")
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    n_gpu = torch.cuda.device_count()
-    if n_gpu > 1:
-        model = torch.nn.DataParallel(model, device_ids=[0,1,2,3,4,5,6,7], output_device=7)
-    model.to(device)
-    
-    print("   Encoding sentences...")
-    
     # Create dataframe for storing embeddings.
     cols = ['feat'+str(i+1) for i in range(768)]
     df = pd.DataFrame(columns=cols)
     df['Sentence'] = None
     
+    
+    print("   Loading pretrained model/tokenizer...")
+    tokenizer = BertTokenizer.from_pretrained(args.model_name_or_path)
+    model = BertModel.from_pretrained(args.model_name_or_path, output_hidden_states=True, cache_dir=args.cache_dir) # Will output all hidden_states.
+    
+    print("   Setting up CUDA & GPU...")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    n_gpu = torch.cuda.device_count()
+    if n_gpu > 1:
+        model = torch.nn.DataParallel(model, device_ids=[0,1,2,3,4,5,6,7], output_device=7)
+    model.to(device)
+    
+    
+    print("   Encoding sentences...")
     iterator = range(0, len(sentences), args.batch_size)
     for batch_idx in tqdm(iterator, desc="Batches"):
         
@@ -150,10 +160,6 @@ def encode_sentences(args, sentences):
     return df
 
 
-
-
-
-
 def main(args):
     """
     Main function.
@@ -178,8 +184,6 @@ def main(args):
     output_path = args.output_dir + filename + '.csv'
     df.to_csv(output_path, sep=',', encoding='utf-8', float_format='%.10f', decimal='.', index=False)
     
-
-
 
 if __name__=="__main__":
     args = parse_arguments()
