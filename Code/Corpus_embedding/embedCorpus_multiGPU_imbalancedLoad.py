@@ -14,8 +14,6 @@ from transformers import BertModel, BertTokenizer
 from keras.preprocessing.sequence import pad_sequences
 
 import parallel
-from torch.nn.parallel.scatter_gather import gather
-
 
 
 def parse_arguments():
@@ -45,7 +43,7 @@ def parse_arguments():
                         help="Where do you want to store the pre-trained models downloaded from s3.",
     )
     parser.add_argument("--batch_size",
-                        default=512,
+                        default=1024,
                         type=int, 
                         help="Batch size per GPU/CPU."
     )
@@ -71,6 +69,18 @@ def load_sentences(filepath):
     with open(filepath) as myfile:
         sentences = [line for line in myfile]          
     return sentences
+
+
+def sort_sentences(sentences):
+    """
+    Given a list of sentences, sort them according to their length.
+    This is done in order for the batches to have approximately the
+    same length, avoiding mixing very short and very long sentences,
+    within the same batch, which results in padding the very short 
+    sentences and thus messing up the embedding when averaging the word
+    embeddings with lots of padding tokens.
+    """
+    return sorted(sentences, key=len)
 
 
 def gather_sentence_outputs(outputs):
@@ -116,15 +126,10 @@ def encode_sentences(args, sentences):
     Note that here 'parallel.DataParallelModel' is used, where 'parallel.py' is a
     script imported from the ' PyTorch-Encoding' package: https://github.com/zhanghang1989/PyTorch-Encoding
     The DataParallelModel deals better with balanaced load on multi-GPU than torch.nn.DataParallel.
-    The max batch size here is 640.
+    The max batch size here is 512.
     
     However, once again, the utilisation of the GPUs is very volatile (never at 100% all the time).
     """
-    # Create dataframe for storing embeddings.
-    
-    df = pd.DataFrame(columns=cols)
-    df['Sentence'] = None
-    
     print("   Loading pretrained model/tokenizer...")
     tokenizer = BertTokenizer.from_pretrained(args.model_name_or_path)
     model = BertModel.from_pretrained(args.model_name_or_path, output_hidden_states=True, cache_dir=args.cache_dir) # Will output all hidden_states.
@@ -179,7 +184,7 @@ def encode_sentences(args, sentences):
         last_hidden_states = gather_sentence_outputs(outputs)
 
         # For each sentence, take the embeddings of its word from the last layer and represent that sentence by their average.
-        sentence_embeddings = [torch.mean(embeddings, dim=0).detach().cpu().numpy() for embeddings in last_hidden_states]
+        sentence_embeddings = [torch.mean(embeddings, dim=0).to('cpu').numpy() for embeddings in last_hidden_states]
         all_embeddings.extend(sentence_embeddings)
         
     # Create dataframe for storing embeddings.
@@ -197,22 +202,34 @@ def main(args):
     print("\n===================================================")
     print("Loading sentences from {}...".format(args.filepath))
     print("===================================================\n")
+    t0 = time.time()
     sentences = load_sentences(args.filepath)
+    print("   {} sentences loaded.  -  Took: {}".format(len(sentences), format_time(time.time() - t0)))
+    
+    print("\n===================================================")
+    print("Sorting sentences by length...")
+    print("===================================================\n")
+    t0 = time.time()
+    sorted_sentences = sort_sentences(sentences)
+    #sorted_sentences = sorted_sentences[::-1]
+    print("   {} sentences sorted.  -  Took: {}".format(len(sentences), format_time(time.time() - t0)))
     
     print("\n===================================================")
     print("Encoding {} sentences...".format(len(sentences)))
     print("===================================================\n")
     t0 = time.time()
-    df = encode_sentences(args, sentences)
+    df = encode_sentences(args, sorted_sentences)
     elapsed = time.time() - t0
-    print("   Encoding took: {:}  ({:.2f} s/sentences)\n".format(format_time(elapsed), elapsed/len(sentences)))
+    print("   {} sentences embedded. -  Took: {:}  ({:.2f} s/sentences)".format(len(sentences), format_time(elapsed), elapsed/len(sorted_sentences)))
     
     print("\n===================================================")
     print("Saving dataframe to {}...".format(args.output_dir))
     print("===================================================\n")
+    t0 = time.time()
     filename = os.path.splitext(os.path.basename(args.filepath))[0]
     output_path = args.output_dir + filename + '.csv'
     df.to_csv(output_path, sep=',', encoding='utf-8', float_format='%.10f', decimal='.', index=False)
+    print("   Dataframe saved. -  Took: {}\n".format(format_time(time.time() - t0)))
     
 
 if __name__=="__main__":
