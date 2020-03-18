@@ -228,8 +228,9 @@ def main(args):
         print("   Saving dataframe to {}...".format(args.output_dir))
         t0 = time.time()
         filename = os.path.splitext(os.path.basename(file))[0]
-        output_path = args.output_dir + filename + '.csv'
-        df.to_csv(output_path, sep=',', encoding='utf-8', float_format='%.10f', decimal='.', index=False)
+        output_path = args.output_dir + filename + '.h5'
+        df.to_hdf(output_path, key='df', mode='w')
+        #df.to_csv(output_path, sep=',', encoding='utf-8', float_format='%.10f', decimal='.', index=False)
         print("   Dataframe saved. -  Took: {}\n".format(format_time(time.time() - t0)))
     
 
