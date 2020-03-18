@@ -4,6 +4,7 @@ import datetime
 import argparse
 from tqdm import tqdm
 
+import json
 import string
 from collections import Counter
 
@@ -21,12 +22,17 @@ def parse_arguments():
                         type=str, 
                         default='/raid/antoloui/Master-thesis/Data/Cleaned/Tmp/',
                         help="Path of the input directory."
-                       )
+    )
     parser.add_argument("--output_dir", 
                         type=str, 
                         default='/raid/antoloui/Master-thesis/Data/Cleaned/Tmp/',
                         help="Path of the output directory."
-                       )
+    )
+    parser.add_argument("--topk", 
+                        type=int, 
+                        default=100,
+                        help="Topk most common words to select."
+    )
     arguments, _ = parser.parse_known_args()
     return arguments
 
@@ -74,7 +80,7 @@ def main(args):
     """
     """
     print("===================================================")
-    print("Loading corpus...")
+    print("Loading corpus from {}...".format(args.input_dir))
     print("===================================================")
     t0 = time.time()
     sentences = load_sentences(args.input_dir)
@@ -91,9 +97,27 @@ def main(args):
     print("Computing frequency of each word...")
     print("===================================================")
     t0 = time.time()
-    word_freq = Counter(words)
-    common_words = word_freq.most_common(100)
+    words_freq = Counter(words)
     print("   Word frequency computed. -  Took: {:}\n".format(format_time(time.time() - t0)))
+    
+    
+    print("===================================================")
+    print("Saving frequency dictionary to {}...".format(args.output_dir))
+    print("===================================================")
+    t0 = time.time()
+    with open(args.output_dir+'tf.json', 'w') as outfile:
+        json.dump(dict(words_freq), outfile)
+    print("   Dictionary saved. -  Took: {:}\n".format(format_time(time.time() - t0)))
+    
+    
+    print("===================================================")
+    print("Saving most common words to {}...".format(args.output_dir))
+    print("===================================================")
+    t0 = time.time()
+    common_words = words_freq.most_common(args.topk)
+    with open(args.output_dir+'tf_mostCommon.json', 'w') as outfile:
+        json.dump(dict(common_words), outfile)
+    print("   Most common words saved. -  Took: {:}\n".format(format_time(time.time() - t0)))
     
     
     
