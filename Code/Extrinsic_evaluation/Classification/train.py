@@ -99,11 +99,15 @@ def parse_arguments():
                         type=int,
                         help="Log every X updates steps.",
     )
+    parser.add_argument("--balanced",
+                        action='store_true',
+                        help="Should the training dataset be balanced or not.",
+    )
     arguments, _ = parser.parse_known_args()
     return arguments
 
 
-def load_data(filepath, interest_classes=None):
+def load_data(filepath, balanced, interest_classes=None):
     """
     Filepath must be a csv file with 2 columns:
     - First column is a set of sentences;
@@ -124,6 +128,21 @@ def load_data(filepath, interest_classes=None):
     if interest_classes is not None:
         df = df[df.Class.isin(interest_classes)]
     
+    # Create a balanced dataset.
+    if balanced:
+        # Get the maximum number of samples of the smaller class. 
+        # Note that the classes with under 1500 samples are not taken into account.
+        count = df['Class'].value_counts()
+        count = count[count > 1500]
+        nb_samples = min(count)
+
+        # Randomly select 'nb_samples' for all classes.
+        balanced_df = pd.DataFrame(columns=['Sentence', 'Class'])
+        for i, cat in enumerate(count.index.tolist()):
+            tmp_df = df[df['Class']==cat].sample(n=nb_samples, replace=False, random_state=2)
+            balanced_df = pd.concat([balanced_df,tmp_df], ignore_index=True)
+        df = balanced_df.copy(deep=True)
+
     # Add categories ids column.
     categories = df.Class.unique()
     df['Class_id'] = df.apply(lambda row: np.where(categories == row.Class)[0][0], axis=1)
@@ -291,7 +310,7 @@ def main(args):
                            'Release Notes',
                            'Maintain & Operate (Guides & TechNotes)',
                            'End User Guides']
-    df, categories = load_data(args.filepath, classes_of_interest)
+    df, categories = load_data(args.filepath, args.balanced, classes_of_interest)
     sentences = df.Sentence.values  # Get all sentences.
     labels = df.Class_id.values  # Get the associated labels.
     
