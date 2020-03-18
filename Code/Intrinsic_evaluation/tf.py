@@ -20,17 +20,17 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_dir", 
                         type=str, 
-                        default='/raid/antoloui/Master-thesis/Data/Cleaned/Tmp/',
+                        default='/raid/antoloui/Master-thesis/Data/Cleaned/',
                         help="Path of the input directory."
     )
     parser.add_argument("--output_dir", 
                         type=str, 
-                        default='/raid/antoloui/Master-thesis/Data/Cleaned/Tmp/',
+                        default='/raid/antoloui/Master-thesis/Data/Cleaned/',
                         help="Path of the output directory."
     )
     parser.add_argument("--topk", 
                         type=int, 
-                        default=100,
+                        default=1000,
                         help="Topk most common words to select."
     )
     arguments, _ = parser.parse_known_args()
@@ -70,7 +70,7 @@ def get_words(sentences):
     
     all_words = []
     for sent in tqdm(sentences, desc='  Sentences'):
-        words = [word for word in nltk.word_tokenize(sent.lower()) if word not in stop]
+        words = [word for word in nltk.word_tokenize(sent.lower()) if (word not in stop) and (not word.isdigit())]
         all_words.extend(words)
     #all_words = [word for sent in sentences for word in nltk.word_tokenize(sent.lower()) if word not in stop]
     return all_words

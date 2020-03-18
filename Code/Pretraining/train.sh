@@ -1,4 +1,5 @@
-#Models: bert-base-multilingual-cased, bert-base-uncased
+#!/bin/sh
+
 export TRAIN_FILE=/raid/antoloui/Master-thesis/Data/Cleaned/train.raw
 export OUT_DIR=./output/base_cased/
 export DEV_FILE=/raid/antoloui/Master-thesis/Data/Cleaned/dev.raw
