@@ -32,7 +32,7 @@ Code/_/Search/models/*
 #-------------------
 Code/Pretraining/_/bert_singleGPU/pretraining_output_fullfat/*
 Code/Pretraining/_/bert_singleGPU/pretraining_output_megafat/*
-Code/Pretraining/output/*
+Code/_output/*
 Code/Extrinsic_evaluation/GLUE/output/*
 Code/Extrinsic_evaluation/Summarization/output/*
 Code/Extrinsic_evaluation/NER/output/*
@@ -49,7 +49,7 @@ Code/_cache/*
 #---------------
 # Tensorboard
 #---------------
-Code/Pretraining/runs/*
+Code/_runs/*
 Code/Extrinsic_evaluation/GLUE/runs/*
 Code/Extrinsic_evaluation/NER/runs/*
 Code/Extrinsic_evaluation/Classification/runs/*
