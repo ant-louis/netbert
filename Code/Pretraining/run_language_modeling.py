@@ -37,6 +37,8 @@ from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampl
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 
+import parallel
+
 from transformers import (
     WEIGHTS_NAME,
     AdamW,
@@ -342,7 +344,7 @@ def train(args, train_dataset, model: PreTrainedModel, tokenizer: PreTrainedToke
             labels = labels.to(args.device)
             model.train()
             outputs = model(inputs, masked_lm_labels=labels) if args.mlm else model(inputs, labels=labels)
-            loss = outputs[0]  # model outputs are always tuple in transformers (see doc)
+            loss = outputs[0]  # model outputs are always tuple in transformers (see doc).
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
@@ -435,7 +437,8 @@ def evaluate(args, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prefi
 
     # multi-gpu evaluate
     if args.n_gpu > 1:
-        model = torch.nn.DataParallel(model)
+        #model = torch.nn.DataParallel(model)
+        model = parallel.DataParallelModel(model)
 
     # Eval!
     logger.info("***** Running evaluation {} *****".format(prefix))
@@ -452,7 +455,14 @@ def evaluate(args, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, prefi
 
         with torch.no_grad():
             outputs = model(inputs, masked_lm_labels=labels) if args.mlm else model(inputs, labels=labels)
-            lm_loss = outputs[0]
+            if args.n_gpu > 1:
+                #-------When using parallel.DataParallelModel------
+                lm_loss = [output[0] for output in outputs]
+                lm_loss = torch.stack(lm_loss)
+                ##--------When using torch.nn.DataParallel--------
+                #lm_loss = outputs[0]   # Tensor of shape (n_gpus,1) gathering the losses from all gpus.
+            else:
+                lm_loss = outputs[0]
             eval_loss += lm_loss.mean().item()
         nb_eval_steps += 1
 
@@ -476,7 +486,11 @@ def main():
 
     # Required parameters
     parser.add_argument(
-        "--train_data_file", default=None, type=str, required=True, help="The input training data file (a text file)."
+        "--train_data_file", 
+        default=None, 
+        type=str, 
+        #required=True, 
+        help="The input training data file (a text file)."
     )
     parser.add_argument(
         "--output_dir",
@@ -485,7 +499,10 @@ def main():
         help="The output directory where the model predictions and checkpoints will be written.",
     )
     parser.add_argument(
-        "--model_type", type=str, required=True, help="The model architecture to be trained or fine-tuned.",
+        "--model_type", 
+        type=str, 
+        required=True, 
+        help="The model architecture to be trained or fine-tuned.",
     )
 
     # Other parameters
