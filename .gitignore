@@ -49,7 +49,7 @@ Code/_cache/*
 #---------------
 # Tensorboard
 #---------------
-Code/Pretraining/runs/*
+Code/_runs/*
 Code/Extrinsic_evaluation/GLUE/runs/*
 Code/Extrinsic_evaluation/NER/runs/*
 Code/Extrinsic_evaluation/Classification/runs/*
