@@ -276,6 +276,16 @@ def plot_confusion_matrix(cm, classes, outdir):
     plt.savefig(outdir+"confusion_matrix.png")
     plt.close()
     return
+
+
+def analyze_predictions(preds, out_labels_ids):
+    """
+    """
+    wrong_indices = [i for i in preds if preds[i] != out_labels_ids[i]]
+    right_indices = [i for i in preds if preds[i] == out_labels_ids[i]]
+    wrong_preds = [xxx[i] for i in wrong_indices]
+    right_preds = [xxx[i] for i in right_indices]
+    return (wrong_preds, right_preds)
     
 
 def format_time(elapsed):
@@ -543,7 +553,10 @@ def main(args):
         preds = np.argmax(preds, axis=1)
         
         # Report results.
-        result = compute_metrics(preds, out_label_ids, categories)
+        #result = compute_metrics(preds, out_label_ids, categories)
+        
+        # Analyze predictions
+        wrong_preds, right_preds = analyze_predictions(preds, out_labels_ids)
         
         tb_writer.add_scalar('Test/Accuracy', result[0], epoch_i + 1)
         print("  Accuracy: {0:.4f}".format(result[0]))
