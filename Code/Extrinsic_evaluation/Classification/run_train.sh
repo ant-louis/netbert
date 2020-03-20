@@ -8,7 +8,7 @@ export MODEL=netbert-1880000
 
 export MODELS_PATH=/raid/antoloui/Master-thesis/Code/_models/
 export TRAIN_FILE=/raid/antoloui/Master-thesis/Data/Classification/cam_query_to_doctype.csv
-export EPOCHS=4
+export EPOCHS=6
 export BATCHES=256
 
 python -W ignore -u train.py \
