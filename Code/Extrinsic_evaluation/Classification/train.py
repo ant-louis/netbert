@@ -85,7 +85,7 @@ def parse_arguments():
                         help="Epsilon for Adam optimizer.",
     )
     parser.add_argument("--output_dir",
-                        default='./output/',
+                        default=None,
                         type=str,
                         help="The output directory where the model predictions and checkpoints will be written.",
     )
@@ -95,7 +95,7 @@ def parse_arguments():
                         help="Id of the GPU to use if multiple GPUs.",
     )
     parser.add_argument("--logging_steps",
-                        default=40,
+                        default=5,
                         type=int,
                         help="Log every X updates steps.",
     )
@@ -352,15 +352,13 @@ def main(args):
     # Create tensorboard summarywriter
     tb_writer = SummaryWriter()
     
-    # Setup CUDA, GPU
-    torch.cuda.set_device(args.gpu_id)
-    if torch.cuda.is_available():    
-        device = torch.device("cuda") # Tell PyTorch to use the GPU.
-        print('GPU training available! GPU used: {} ({})\n'.format(torch.cuda.get_device_name(args.gpu_id), args.gpu_id))
-    else:
-        print('No GPU available, using the CPU instead.')
-        device = torch.device("cpu")
-
+    # Create output dir if none mentioned.
+    if args.output_dir is None:
+        model_name = os.path.splitext(os.path.basename(args.model_name_or_path))[0]
+        args.output_dir = "./output/" + model_name + '_finetuned/'
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+    
     # Set the seed value all over the place to make this reproducible.
     set_seed(args.seed)
     
@@ -373,7 +371,25 @@ def main(args):
         output_hidden_states = False, # Whether the model returns all hidden-states.
         cache_dir = args.cache_dir,
     )
-    model.to(device)  # Tell pytorch to run this model on the GPU.
+    
+    print("Setting up CUDA & GPU...")
+    if torch.cuda.is_available():
+        if args.gpu_id:
+            torch.cuda.set_device(args.gpu_id)
+            n_gpu = 1
+            print("GPU training available! As '--gpu_id' was set, only GPU {} {} will be used (no parallel training).\n".format(torch.cuda.get_device_name(args.gpu_id), args.gpu_id))
+        else:
+            n_gpu = torch.cuda.device_count()
+            gpu_ids = list(range(0, n_gpu))
+            if n_gpu > 1:
+                model = torch.nn.DataParallel(model, device_ids=gpu_ids, output_device=gpu_ids[-1])
+            print("GPU training available! Training will use GPU(s) {}\n".format(gpu_ids))
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+        n_gpu = 0
+        print("No GPU available, using the CPU instead.\n")
+    model.to(device)  # Tell pytorch to run the model on the device.
     
     print("Setting up Optimizer & Learning Rate Scheduler...\n")
     optimizer = AdamW(model.parameters(),
@@ -437,6 +453,9 @@ def main(args):
 
             # The call to `model` always returns a tuple, so we need to pull the loss value out of the tuple.
             loss = outputs[0]
+            
+            if n_gpu > 1:
+                loss = loss.mean()  # mean() to average on multi-gpu parallel training
 
             # Accumulate the training loss over all of the batches so that we can calculate the average loss at the end. 
             # `loss` is a Tensor containing a single value; the `.item()` function just returns the Python value from the tensor.
@@ -545,19 +564,13 @@ def main(args):
         print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
 
     print("\nTraining complete!\n")
-    
+        
     print("Saving model to {}...\n.".format(args.output_dir))
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-
-    # Save a trained model, configuration and tokenizer using `save_pretrained()`.
-    # They can then be reloaded using `from_pretrained()`
+    # Save a trained model, configuration and tokenizer using `save_pretrained()`. They can then be reloaded using `from_pretrained()`.
     model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
     model_to_save.save_pretrained(args.output_dir)
     tokenizer.save_pretrained(args.output_dir)
-
-    # Good practice: save your training arguments together with the trained model
-    torch.save(args, os.path.join(args.output_dir, 'training_args.bin'))
+    torch.save(args, os.path.join(args.output_dir, 'training_args.bin'))  # Good practice: save your training arguments together with the trained model
     
 
 if __name__=="__main__":

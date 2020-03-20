@@ -105,7 +105,8 @@ def encode_sentences(args, sentences):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     if n_gpu > 1:
-        model = torch.nn.DataParallel(model, device_ids=[0,1,2,3,4,5,6,7], output_device=7)
+        gpu_ids = list(range(0, n_gpu))
+        model = torch.nn.DataParallel(model, device_ids=gpu_ids, output_device=gpu_ids[-1])
     model.to(device)
     
     print("   Encoding sentences...")
