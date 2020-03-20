@@ -95,7 +95,7 @@ def parse_arguments():
                         help="Id of the GPU to use if multiple GPUs.",
     )
     parser.add_argument("--logging_steps",
-                        default=5,
+                        default=1,
                         type=int,
                         help="Log every X updates steps.",
     )
@@ -355,7 +355,7 @@ def main(args):
     # Create output dir if none mentioned.
     if args.output_dir is None:
         model_name = os.path.splitext(os.path.basename(args.model_name_or_path))[0]
-        args.output_dir = "./output/" + model_name + '_finetuned/'
+        args.output_dir = "./output/" + model_name + '/'
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
     
