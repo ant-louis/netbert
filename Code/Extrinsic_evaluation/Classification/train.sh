@@ -13,7 +13,9 @@ export BATCHES=256
 
 python -W ignore -u train.py \
     --model_name_or_path $MODELS_PATH/$MODEL \
-    --filepath $TRAIN_FILE \
+    --do_train \
+    --training_filepath $TRAIN_FILE \
     --num_epochs $EPOCHS \
     --batch_size $BATCHES \
-    --balanced |& tee ./output/$MODEL/training_logs.txt
+    --balanced \
+    --do_eval |& tee ./output/$MODEL/training_logs.txt
