@@ -33,22 +33,43 @@ def parse_arguments():
     Parser.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--filepath",
-                        default='',
-                        type=str,
-                        required=True,
-                        help="Path of the file containing the sentences to encode.",
-    )
     parser.add_argument("--model_name_or_path",
-                        default='',
                         type=str,
                         required=True,
                         help="Path to pre-trained model or shortcut name",
     )
-    parser.add_argument("--max_seq_length",
-                        default=192,
+    parser.add_argument("--do_train",
+                        action='store_true',
+                        help="Whether to launch training.",
+    )
+    parser.add_argument("--training_filepath",
+                        default=None,
+                        type=str,
+                        help="Path of the file containing the sentences to encode.",
+    )
+    parser.add_argument("--do_eval",
+                        action='store_true',
+                        help="Whether to evaluate the model.",
+    )
+    parser.add_argument("--eval_filepath",
+                        default=None,
+                        type=str,
+                        help="Path of the file containing the sentences to encode.",
+    )
+    parser.add_argument("--output_dir",
+                        default=None,
+                        type=str,
+                        help="The output directory where the model predictions and checkpoints will be written.",
+    )
+    parser.add_argument("--cache_dir",
+                        default='/raid/antoloui/Master-thesis/Code/_cache/',
+                        type=str,
+                        help="Where do you want to store the pre-trained models downloaded from s3.",
+    )
+    parser.add_argument("--num_labels",
+                        default=5,
                         type=int,
-                        help="The maximum total input sequence length after tokenization. Sequences longer than this will be truncated, sequences shorter will be padded.",
+                        help="Number of classification labels.",
     )
     parser.add_argument('--test_percent',
                         default=0.1,
@@ -65,11 +86,6 @@ def parse_arguments():
                         type=int,
                         help="Batch size per GPU/CPU for training. For fine-tuning BERT on a specific task, the authors recommend a batch size of 16 or 32.",
     )
-    parser.add_argument("--cache_dir",
-                        default='../_cache/',
-                        type=str,
-                        help="Where do you want to store the pre-trained models downloaded from s3.",
-    )
     parser.add_argument("--num_epochs",
                         default=4,
                         type=int,
@@ -83,11 +99,6 @@ def parse_arguments():
                         default=1e-8,
                         type=float,
                         help="Epsilon for Adam optimizer.",
-    )
-    parser.add_argument("--output_dir",
-                        default=None,
-                        type=str,
-                        help="The output directory where the model predictions and checkpoints will be written.",
     )
     parser.add_argument("--gpu_id",
                         default=0,
@@ -107,7 +118,7 @@ def parse_arguments():
     return arguments
 
 
-def load_data(filepath, balanced, interest_classes=None):
+def load_training_data(filepath, balanced, interest_classes=None):
     """
     Filepath must be a csv file with 2 columns:
     - First column is a set of sentences;
@@ -149,25 +160,23 @@ def load_data(filepath, balanced, interest_classes=None):
     return df, categories
 
 
-def tokenize_sentences(model, max_len, df):
+def tokenize_sentences(tokenizer, df):
     """
     Tokenize all sentences in dataset with BertTokenizer.
-    """
-    # Load the BERT tokenizer.
-    print('Loading BertTokenizer...\n')
-    tokenizer = BertTokenizer.from_pretrained(model, do_lower_case=False)
-    
+    """    
     # Tokenize each sentence of the dataset.
-    print("Tokenizing each sentence of the dataset...\n")
     tokenized = df['Sentence'].apply((lambda x: tokenizer.encode(x, add_special_tokens=True)))
     
+    lengths = [len(i) for i in tokenized]
+    max_len = max(lengths) if max(lengths) <= 512 else 512
+    
     # Pad and truncate our sequences so that they all have the same length, max_len.
+    print('Max sentence length: {}\n'.format(max_len))
     print('Padding/truncating all sentences to {} values...'.format(max_len))
-    print('Padding token: "{:}", ID: {:}\n'.format(tokenizer.pad_token, tokenizer.pad_token_id))
     tokenized = pad_sequences(tokenized, maxlen=max_len, dtype="long", 
                               value=0, truncating="post", padding="post") # "post" indicates that we want to pad and truncate at the end of the sequence, as opposed to the beginning.
     
-    return tokenized, tokenizer
+    return tokenized
 
 
 def create_masks(tokenized):
@@ -183,10 +192,12 @@ def create_masks(tokenized):
     return attention_masks
 
 
-def split_data(tokenized, labels, attention_masks, test_percent, seed):
+def split_data(dataset, test_percent, seed):
     """
     Split dataset to train/test.
     """
+    tokenized, labels, attention_masks = dataset
+    
     if test_percent < 0.0 or test_percent > 1.0:
         print("Error: '--test_percent' must be between [0,1].")
         sys.exit()
@@ -197,34 +208,29 @@ def split_data(tokenized, labels, attention_masks, test_percent, seed):
     # Do the same for the masks.
     train_masks, validation_masks, _, _ = train_test_split(attention_masks, labels,
                                                  random_state=seed, test_size=test_percent)
+    
+    return (train_inputs, train_labels, train_masks), (validation_inputs, validation_labels, validation_masks)
+    
 
+def create_dataloader(dataset, batch_size, training_data=True):
+    """
+    """
+    inputs, labels, masks = dataset
+                                                       
     # Convert all inputs and labels into torch tensors, the required datatype for our model.
-    train_inputs = torch.tensor(train_inputs)
-    validation_inputs = torch.tensor(validation_inputs)
-
-    train_labels = torch.tensor(train_labels)
-    validation_labels = torch.tensor(validation_labels)
-
-    train_masks = torch.tensor(train_masks)
-    validation_masks = torch.tensor(validation_masks)
+    inputs = torch.tensor(inputs)
+    labels = torch.tensor(labels)
+    masks = torch.tensor(masks)                                                  
     
-    return train_inputs, validation_inputs, train_labels, validation_labels, train_masks, validation_masks
+    # Create the DataLoader.
+    data = TensorDataset(inputs, masks, labels)
+    if training_data:                                           
+        sampler = RandomSampler(data)
+    else:
+        sampler = SequentialSampler(data)                                               
+    dataloader = DataLoader(data, sampler=sampler, batch_size=batch_size)
     
-
-def create_dataloader(train_inputs, validation_inputs, train_labels, validation_labels, train_masks, validation_masks, batch_size):
-    """
-    """
-    # Create the DataLoader for our training set.
-    train_data = TensorDataset(train_inputs, train_masks, train_labels)
-    train_sampler = RandomSampler(train_data)
-    train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=batch_size)
-
-    # Create the DataLoader for our validation set.
-    validation_data = TensorDataset(validation_inputs, validation_masks, validation_labels)
-    validation_sampler = SequentialSampler(validation_data)
-    validation_dataloader = DataLoader(validation_data, sampler=validation_sampler, batch_size=batch_size)
-    
-    return train_data, train_sampler, train_dataloader, validation_data, validation_sampler, validation_dataloader
+    return data, sampler, dataloader
 
 
 def compute_metrics(preds, labels, classes):
@@ -307,101 +313,21 @@ def set_seed(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-
-
-def main(args):
-    print("\n========================================")
-    print('               Load data                ')
-    print("========================================\n")
-    classes_of_interest = ['Command References',
-                           'Data Sheets',
-                           'Configuration (Guides, Examples & TechNotes)',
-                           'Install & Upgrade Guides',
-                           'Release Notes',
-                           'Maintain & Operate (Guides & TechNotes)',
-                           'End User Guides']
-    df, categories = load_data(args.filepath, args.balanced, classes_of_interest)
-    sentences = df.Sentence.values  # Get all sentences.
-    labels = df.Class_id.values  # Get the associated labels.
-    
-    print('Number of training sentences: {:,}\n'.format(df.shape[0]))
-    print('Number of doc types: {:,}'.format(len(categories)))
-    for i, cat in enumerate(categories):
-        print("  {} : {}".format(cat, i))
-    
-    print("\n========================================")
-    print('            Tokenize sentences          ')
-    print("========================================\n")
-    tokenized, tokenizer = tokenize_sentences(args.model_name_or_path, args.max_seq_length, df)
-    attention_masks = create_masks(tokenized)
-    print('Max sentence length: {}\n'.format(max([len(sent) for sent in tokenized])))
-    
-    # Print an example of tokenization.
-    print("Example:")
-    print('  - Original sentence: ', sentences[0])
-    print('  - Tokenized sentence: ', tokenizer.tokenize(sentences[0]))
-    print('  - Token IDs: ', tokenizer.convert_tokens_to_ids(tokenizer.tokenize(sentences[0])))
-    print('  - Token IDs with [CLS] and [SEP] tokens: ', tokenizer.encode(sentences[0], add_special_tokens=True))
-    print('  - Token IDs after padding/truncating:', list(tokenized[0]))
-    print("  - Attention masks: ", attention_masks[0])
     
     
-    print("\n========================================")
-    print('               Prepare data             ')
-    print("========================================\n")
-    print("Splitting dataset to train/test...\n")
-    train_inputs, validation_inputs, train_labels, validation_labels, train_masks, validation_masks = split_data(tokenized, labels, attention_masks, args.test_percent, args.seed)
-    
-    print("Creating dataloader...\n")
-    train_data, train_sampler, train_dataloader, validation_data, validation_sampler, validation_dataloader = create_dataloader(train_inputs, validation_inputs, train_labels, validation_labels, train_masks, validation_masks, args.batch_size)
-    
-    
-    print("\n========================================")
-    print('                 Training               ')
-    print("========================================\n")
-    # Create tensorboard summarywriter
-    tb_writer = SummaryWriter()
-    
-    # Create output dir if none mentioned.
-    if args.output_dir is None:
-        model_name = os.path.splitext(os.path.basename(args.model_name_or_path))[0]
-        args.output_dir = "./output/" + model_name + '/'
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-    
-    # Set the seed value all over the place to make this reproducible.
-    set_seed(args.seed)
-    
-    print("Loading BertForSequenceClassification model...\n")
-    # Load pretrained BERT model with a single linear classification layer on top. 
-    model = BertForSequenceClassification.from_pretrained(
-        args.model_name_or_path, # Use the 12-layer BERT model, with an cased vocab.
-        num_labels = len(categories), # The number of output labels
-        output_attentions = False, # Whether the model returns attentions weights.
-        output_hidden_states = False, # Whether the model returns all hidden-states.
-        cache_dir = args.cache_dir,
-    )
-    
-    print("Setting up CUDA & GPU...")
-    if torch.cuda.is_available():
-        if args.gpu_id:
-            torch.cuda.set_device(args.gpu_id)
-            n_gpu = 1
-            print("GPU training available! As '--gpu_id' was set, only GPU {} {} will be used (no parallel training).\n".format(torch.cuda.get_device_name(args.gpu_id), args.gpu_id))
-        else:
-            n_gpu = torch.cuda.device_count()
-            gpu_ids = list(range(0, n_gpu))
-            if n_gpu > 1:
-                model = torch.nn.DataParallel(model, device_ids=gpu_ids, output_device=gpu_ids[-1])
-            print("GPU training available! Training will use GPU(s) {}\n".format(gpu_ids))
-        device = torch.device("cuda")
+def train(args, model, tokenizer, dataset, tb_writer, categories):
+    """
+    """
+    if args.do_eval and args.eval_filepath is None:
+        print("Splitting dataset to train/test...\n")
+        train_dataset, validation_dataset = split_data(dataset, args.test_percent, args.seed)
     else:
-        device = torch.device("cpu")
-        n_gpu = 0
-        print("No GPU available, using the CPU instead.\n")
-    model.to(device)  # Tell pytorch to run the model on the device.
+        train_dataset = dataset
     
-    print("Setting up Optimizer & Learning Rate Scheduler...\n")
+    print("Creating training dataloader...\n")
+    train_data, train_sampler, train_dataloader = create_dataloader(train_dataset, args.batch_size, training_data=True)
+                                                       
+    # Setting up Optimizer & Learning Rate Scheduler.
     optimizer = AdamW(model.parameters(),
                   lr = args.learning_rate,
                   eps = args.adam_epsilon
@@ -415,12 +341,9 @@ def main(args):
     tr_loss, logging_loss = 0.0, 0.0
 
     # For each epoch...
+    t = time.time()
     for epoch_i in range(0, args.num_epochs):
-
-        # ========================================
-        #               Training
-        # ========================================
-
+        
         # Perform one full pass over the training set.
         print('======== Epoch {:} / {:} ========'.format(epoch_i + 1, args.num_epochs))
         print('Training...')
@@ -443,9 +366,9 @@ def main(args):
             #   [0]: input ids 
             #   [1]: attention masks
             #   [2]: labels 
-            b_input_ids = batch[0].to(device)
-            b_input_mask = batch[1].to(device)
-            b_labels = batch[2].to(device)
+            b_input_ids = batch[0].to(args.device)
+            b_input_mask = batch[1].to(args.device)
+            b_labels = batch[2].to(args.device)
 
             # Always clear any previously calculated gradients before performing a backward pass. 
             # PyTorch doesn't do this automatically because accumulating the gradients is "convenient while training RNNs". 
@@ -464,7 +387,7 @@ def main(args):
             # The call to `model` always returns a tuple, so we need to pull the loss value out of the tuple.
             loss = outputs[0]
             
-            if n_gpu > 1:
+            if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
 
             # Accumulate the training loss over all of the batches so that we can calculate the average loss at the end. 
@@ -502,90 +425,188 @@ def main(args):
                 print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.    Training loss: {:.2f}'.format(step, len(train_dataloader), elapsed, loss_scalar))
 
         print("  Training epoch took: {:}\n".format(format_time(time.time() - t0)))
-
-        # ========================================
-        #               Validation
-        # ========================================
-        # After the completion of each training epoch, measure our performance on
-        # our validation set.
-        print("\nRunning Validation...\n")
-        t0 = time.time()
         
-        # Tracking variables
-        nb_eval_steps = 0
-        preds = None
-        out_label_ids = None
-
-        # Evaluate data for one epoch
-        for batch in validation_dataloader:
+        if args.do_eval and args.eval_filepath is None:
+            # After the completion of each training epoch, measure our performance on our validation set.
             
-            # Put the model in evaluation mode--the dropout layers behave differently during evaluation.
-            model.eval()
-
-            # Add batch to GPU.
-            b_input_ids, b_input_mask, b_labels = tuple(t.to(device) for t in batch)
-
-            # Telling the model not to compute or store gradients, saving memory and speeding up validation
-            with torch.no_grad():        
-
-                # Forward pass, calculate logit predictions.
-                # This will return the logits rather than the loss because we have not provided labels.
-                # token_type_ids is the same as the "segment ids", which differentiates sentence 1 and 2 in 2-sentence tasks.
-                outputs = model(b_input_ids, 
-                                token_type_ids=None, 
-                                attention_mask=b_input_mask)
-
-            # Get the "logits" output by the model. The "logits" are the output values prior to applying an activation function like the softmax.
-            logits = outputs[0]
-
-            # Move logits and labels to CPU and store them.
-            if preds is None:
-                preds = logits.detach().cpu().numpy()
-                out_label_ids = b_labels.detach().cpu().numpy()
-            else:
-                preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
-                out_label_ids = np.append(out_label_ids, b_labels.detach().cpu().numpy(), axis=0)
-                
-            # Track the number of batches
-            nb_eval_steps += 1
+            print("Running Validation...")
+            t0 = time.time()
+            preds, out_label_ids = evaluate(args, model, validation_dataset)
             
-        # Take the max predicitions.
-        preds = np.argmax(preds, axis=1)
-        
-        # Report results.
-        #result = compute_metrics(preds, out_label_ids, categories)
-        
-        # Analyze predictions
-        wrong_preds, right_preds = analyze_predictions(preds, out_labels_ids)
-        
-        tb_writer.add_scalar('Test/Accuracy', result[0], epoch_i + 1)
-        print("  Accuracy: {0:.4f}".format(result[0]))
-        
-        tb_writer.add_scalar('Test/Recall', result[1], epoch_i + 1)
-        print("  Recall: {0:.4f}".format(result[1]))
-        
-        tb_writer.add_scalar('Test/Precision', result[2], epoch_i + 1)
-        print("  Precision: {0:.4f}".format(result[2]))
-        
-        tb_writer.add_scalar('Test/F1 score', result[3], epoch_i + 1)
-        print("  F1 score: {0:.4f}".format(result[3]))
-        
-        tb_writer.add_scalar('Test/MCC', result[4], epoch_i + 1)
-        print("  MCC: {0:.4f}".format(result[4]))
-        
-        plot_confusion_matrix(result[5], categories, args.output_dir)
-        print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
+            # Report results.
+            result = compute_metrics(preds, out_label_ids, categories)
 
-    print("\nTraining complete!\n")
+            # Analyze predictions
+            #wrong_preds, right_preds = analyze_predictions(preds, out_labels_ids)
+
+            tb_writer.add_scalar('Test/Accuracy', result[0], epoch_i + 1)
+            print("  Accuracy: {0:.4f}".format(result[0]))
+
+            tb_writer.add_scalar('Test/Recall', result[1], epoch_i + 1)
+            print("  Recall: {0:.4f}".format(result[1]))
+
+            tb_writer.add_scalar('Test/Precision', result[2], epoch_i + 1)
+            print("  Precision: {0:.4f}".format(result[2]))
+
+            tb_writer.add_scalar('Test/F1 score', result[3], epoch_i + 1)
+            print("  F1 score: {0:.4f}".format(result[3]))
+
+            tb_writer.add_scalar('Test/MCC', result[4], epoch_i + 1)
+            print("  MCC: {0:.4f}".format(result[4]))
+
+            plot_confusion_matrix(result[5], categories, args.output_dir)
+            print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
+    
+    print("Training complete!  Took: {}\n".format(format_time(time.time() - t)))
         
     print("Saving model to {}...\n.".format(args.output_dir))
-    # Save a trained model, configuration and tokenizer using `save_pretrained()`. They can then be reloaded using `from_pretrained()`.
     model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
     model_to_save.save_pretrained(args.output_dir)
     tokenizer.save_pretrained(args.output_dir)
     torch.save(args, os.path.join(args.output_dir, 'training_args.bin'))  # Good practice: save your training arguments together with the trained model
-    
+    return
 
+
+def evaluate(args, model, validation_dataset):
+    """
+    """
+    #Creating validation dataloader.
+    validation_data, validation_sampler, validation_dataloader = create_dataloader(validation_dataset, args.batch_size, training_data=False)
+    
+    # Tracking variables
+    nb_eval_steps = 0
+    preds = None
+    out_label_ids = None
+
+    # Evaluate data for one epoch
+    for batch in validation_dataloader:
+            
+        # Put the model in evaluation mode--the dropout layers behave differently during evaluation.
+        model.eval()
+
+        # Add batch to GPU.
+        b_input_ids, b_input_mask, b_labels = tuple(t.to(args.device) for t in batch)
+
+        # Telling the model not to compute or store gradients, saving memory and speeding up validation
+        with torch.no_grad():        
+
+            # Forward pass, calculate logit predictions.
+            # This will return the logits rather than the loss because we have not provided labels.
+            # token_type_ids is the same as the "segment ids", which differentiates sentence 1 and 2 in 2-sentence tasks.
+            outputs = model(b_input_ids, 
+                            token_type_ids=None, 
+                            attention_mask=b_input_mask)
+
+        # Get the "logits" output by the model. The "logits" are the output values prior to applying an activation function like the softmax.
+        logits = outputs[0]
+
+        # Move logits and labels to CPU and store them.
+        if preds is None:
+            preds = logits.detach().cpu().numpy()
+            out_label_ids = b_labels.detach().cpu().numpy()
+        else:
+            preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
+            out_label_ids = np.append(out_label_ids, b_labels.detach().cpu().numpy(), axis=0)
+                
+        # Track the number of batches
+        nb_eval_steps += 1
+            
+    # Take the max predicitions.
+    preds = np.argmax(preds, axis=1)
+    
+    return preds, out_label_ids
+
+
+def main(args):
+    """
+    """
+    # Create tensorboard summarywriter.
+    tb_writer = SummaryWriter()
+    
+    # Create output dir if none mentioned.
+    if args.output_dir is None:
+        model_name = os.path.splitext(os.path.basename(args.model_name_or_path))[0]
+        args.output_dir = "./output/" + model_name + '/'
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+        
+    # Set the seed value all over the place to make this reproducible.
+    set_seed(args.seed)
+    
+    print("\n========================================")
+    print('               Load model                 ')
+    print("========================================\n")
+    print("Loading BertForSequenceClassification model...\n")
+    model = BertForSequenceClassification.from_pretrained(
+        args.model_name_or_path, # Use the 12-layer BERT model, with an cased vocab.
+        num_labels = args.num_labels, # The number of output labels
+        output_attentions = False, # Whether the model returns attentions weights.
+        output_hidden_states = False, # Whether the model returns all hidden-states.
+        cache_dir = args.cache_dir,
+    )
+    print('Loading BertTokenizer...\n')
+    tokenizer = BertTokenizer.from_pretrained(args.model_name_or_path, do_lower_case=False)
+    
+    print("Setting up CUDA & GPU...")
+    if torch.cuda.is_available():
+        if args.gpu_id:
+            torch.cuda.set_device(args.gpu_id)
+            args.n_gpu = 1
+            print("GPU training available! As '--gpu_id' was set, only GPU {} {} will be used (no parallel training).\n".format(torch.cuda.get_device_name(args.gpu_id), args.gpu_id))
+        else:
+            args.n_gpu = torch.cuda.device_count()
+            gpu_ids = list(range(0, args.n_gpu))
+            if args.n_gpu > 1:
+                model = torch.nn.DataParallel(model, device_ids=gpu_ids, output_device=gpu_ids[-1])
+            print("GPU training available! Training will use GPU(s) {}\n".format(gpu_ids))
+        args.device = torch.device("cuda")
+    else:
+        args.device = torch.device("cpu")
+        args.n_gpu = 0
+        print("No GPU available, using the CPU instead.\n")
+    model.to(args.device)  # Tell pytorch to run the model on the device.
+    
+    
+    print("\n========================================")
+    print('               Processing data            ')
+    print("========================================\n")
+    classes_of_interest = ['Command References',
+                            'Data Sheets',
+                            'Configuration (Guides, Examples & TechNotes)',
+                            'Install & Upgrade Guides',
+                            'Release Notes',
+                            'Maintain & Operate (Guides & TechNotes)',
+                            'End User Guides']
+    
+    if args.do_train:
+        print("Loading training data...")
+        df, categories = load_training_data(args.training_filepath, args.balanced, classes_of_interest)
+    
+    elif args.do_eval and args.eval_filepath is not None:
+        print("Loading validation data...")
+        df, categories = load_validation_data(args.eval_filepath, classes_of_interest)
+        
+    sentences = df.Sentence.values  # Get all sentences.
+    labels = df.Class_id.values  # Get the associated labels.
+    print('  - Number of sentences: {:,}'.format(df.shape[0]))
+    print('  - Number of doc types: {:,}'.format(len(categories)))
+    for i, cat in enumerate(categories):
+        print("     * {} : {}".format(cat, i))
+        
+    print("Tokenizing sentences...")
+    tokenized = tokenize_sentences(tokenizer, df)
+    attention_masks = create_masks(tokenized)
+    
+    dataset = (tokenized, labels, attention_masks)
+    if args.do_train:
+        print("Launching training...")
+        train(args, model, tokenizer, dataset, tb_writer, categories)
+    
+    elif args.do_eval and args.eval_filepath is not None:
+        print("Launching validation...")
+        evaluate(args, model, dataset)
+        
+    
 if __name__=="__main__":
     args = parse_arguments()
     main(args)
