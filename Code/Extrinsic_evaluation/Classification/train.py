@@ -196,29 +196,29 @@ def split_data(dataset, test_percent, seed):
     """
     Split dataset to train/test.
     """
-    sentences, tokenized, labels, attention_masks = dataset
+    tokenized, class_ids, attention_masks, sentences = dataset
     
     if test_percent < 0.0 or test_percent > 1.0:
         print("Error: '--test_percent' must be between [0,1].")
         sys.exit()
         
     # Use 90% for training and 10% for validation.
-    train_inputs, validation_inputs, train_labels, validation_labels = train_test_split(tokenized, labels, 
+    train_inputs, val_inputs, train_labels, val_labels = train_test_split(tokenized, class_ids, 
                                                                 random_state=seed, test_size=test_percent)
     # Do the same for the masks.
-    train_masks, validation_masks, _, _ = train_test_split(attention_masks, labels,
+    train_masks, val_masks, _, _ = train_test_split(attention_masks, class_ids,
                                                  random_state=seed, test_size=test_percent)
     # Do the same for the sentences.
-    train_sentences, validation_sentences, _, _ = train_test_split(sentences, labels,
+    train_sentences, val_sentences, _, _ = train_test_split(sentences, class_ids,
                                                  random_state=seed, test_size=test_percent)
     
-    return (train_sentences, train_inputs, train_labels, train_masks), (validation_sentences, validation_inputs, validation_labels, validation_masks)
+    return (train_inputs, train_labels, train_masks, train_sentences), (val_inputs, val_labels, val_masks, val_sentences)
     
 
 def create_dataloader(dataset, batch_size, training_data=True):
     """
     """
-    sentences, inputs, labels, masks = dataset
+    inputs, labels, masks, _ = dataset
                                                        
     # Convert all inputs and labels into torch tensors, the required datatype for our model.
     inputs = torch.tensor(inputs)
@@ -287,14 +287,26 @@ def plot_confusion_matrix(cm, classes, outdir):
     return
 
 
-def analyze_predictions(preds, out_labels_ids):
+def analyze_predictions(preds, labels, sentences):
     """
+    Analyze more deeply the right and wrong predictions of the model on the dev set.
     """
-    wrong_indices = [i for i in preds if preds[i] != out_labels_ids[i]]
-    right_indices = [i for i in preds if preds[i] == out_labels_ids[i]]
-    wrong_preds = [xxx[i] for i in wrong_indices]
-    right_preds = [xxx[i] for i in right_indices]
-    return (wrong_preds, right_preds)
+    # Get the wrong predictions.
+    indices_wrong = np.where(preds!=labels)[0]
+    sentences_wrong = [sentences[i] for i in indices_wrong]
+    labels_wrong = [labels[i] for i in indices_wrong]
+    preds_wrong = [preds[i] for i in indices_wrong]
+    df_wrong = pd.DataFrame(list(zip(sentences_wrong, labels_wrong, preds_wrong)),
+                            columns =['Sentence', 'Class', 'Prediction'])
+    
+    # Get the right predictions.
+    indices_right = np.where(preds==labels)[0]
+    sentences_right = [sentences[i] for i in indices_right]
+    labels_right = [labels[i] for i in indices_right]
+    preds_right = [preds[i] for i in indices_right]
+    df_right = pd.DataFrame(list(zip(sentences_right, labels_right, preds_right)),
+                            columns =['Sentence', 'Class', 'Prediction'])
+    return df_wrong, df_right
     
 
 def format_time(elapsed):
@@ -430,17 +442,21 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
         print("  Training epoch took: {:}\n".format(format_time(time.time() - t0)))
         
         if args.do_eval and args.eval_filepath is None:
-            # After the completion of each training epoch, measure our performance on our validation set.
-            
             print("Running Validation...")
+            # After the completion of each training epoch, measure our performance on our validation set.
             t0 = time.time()
             preds, out_label_ids = evaluate(args, model, validation_dataset)
+            
+            # Get validation sentences.
+            validation_sentences = validation_dataset[3]
             
             # Report results.
             result = compute_metrics(preds, out_label_ids, categories)
 
             # Analyze predictions
-            #wrong_preds, right_preds = analyze_predictions(preds, out_labels_ids)
+            df_wrong, df_right = analyze_predictions(preds, out_label_ids, validation_sentences)
+            df_wrong.to_csv(os.path.join(args.output_dir, 'wrong_predictions.csv'), index=False)
+            df_right.to_csv(os.path.join(args.output_dir, 'right_predictions.csv'), index=False)
 
             tb_writer.add_scalar('Test/Accuracy', result[0], epoch_i + 1)
             print("  * Accuracy: {0:.4f}".format(result[0]))
@@ -472,11 +488,7 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
 
 def evaluate(args, model, validation_dataset):
     """
-    """
-    # Get validation sentences.
-    validation_sentences = validation_dataset[0]
-    print(len(validation_sentences))
-    
+    """    
     #Creating validation dataloader.
     validation_data, validation_sampler, validation_dataloader = create_dataloader(validation_dataset, args.batch_size, training_data=False)
     
@@ -592,9 +604,11 @@ def main(args):
     elif args.do_eval and args.eval_filepath is not None:
         print("Loading validation data...")
         df, categories = load_validation_data(args.eval_filepath, classes_of_interest)
-        
-    sentences = df.Sentence.values  # Get all sentences.
-    labels = df.Class_id.values  # Get the associated labels.
+    
+    # Get all sentences, their associated class and class_id.
+    sentences = df.Sentence.values
+    classes = df.Class.values
+    class_ids = df.Class_id.values
     print('  - Number of sentences: {:,}'.format(df.shape[0]))
     print('  - Number of doc types: {:,}'.format(len(categories)))
     for i, cat in enumerate(categories):
@@ -604,7 +618,7 @@ def main(args):
     tokenized = tokenize_sentences(tokenizer, df)
     attention_masks = create_masks(tokenized)
     
-    dataset = (sentences, tokenized, labels, attention_masks)
+    dataset = (tokenized, class_ids, attention_masks, sentences)
     if args.do_train:
         print("\n========================================")
         print('            Launching training            ')
