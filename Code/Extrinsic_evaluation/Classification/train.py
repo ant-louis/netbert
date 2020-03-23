@@ -171,8 +171,8 @@ def tokenize_sentences(tokenizer, df):
     max_len = max(lengths) if max(lengths) <= 512 else 512
     
     # Pad and truncate our sequences so that they all have the same length, max_len.
-    print('Max sentence length: {}\n'.format(max_len))
-    print('Padding/truncating all sentences to {} values...'.format(max_len))
+    print('Max sentence length: {}'.format(max_len))
+    print('-> Padding/truncating all sentences to {} tokens...'.format(max_len))
     tokenized = pad_sequences(tokenized, maxlen=max_len, dtype="long", 
                               value=0, truncating="post", padding="post") # "post" indicates that we want to pad and truncate at the end of the sequence, as opposed to the beginning.
     
@@ -196,7 +196,7 @@ def split_data(dataset, test_percent, seed):
     """
     Split dataset to train/test.
     """
-    tokenized, labels, attention_masks = dataset
+    sentences, tokenized, labels, attention_masks = dataset
     
     if test_percent < 0.0 or test_percent > 1.0:
         print("Error: '--test_percent' must be between [0,1].")
@@ -208,14 +208,17 @@ def split_data(dataset, test_percent, seed):
     # Do the same for the masks.
     train_masks, validation_masks, _, _ = train_test_split(attention_masks, labels,
                                                  random_state=seed, test_size=test_percent)
+    # Do the same for the sentences.
+    train_sentences, validation_sentences, _, _ = train_test_split(sentences, labels,
+                                                 random_state=seed, test_size=test_percent)
     
-    return (train_inputs, train_labels, train_masks), (validation_inputs, validation_labels, validation_masks)
+    return (train_sentences, train_inputs, train_labels, train_masks), (validation_sentences, validation_inputs, validation_labels, validation_masks)
     
 
 def create_dataloader(dataset, batch_size, training_data=True):
     """
     """
-    inputs, labels, masks = dataset
+    sentences, inputs, labels, masks = dataset
                                                        
     # Convert all inputs and labels into torch tensors, the required datatype for our model.
     inputs = torch.tensor(inputs)
@@ -295,9 +298,9 @@ def analyze_predictions(preds, out_labels_ids):
     
 
 def format_time(elapsed):
-    '''
+    """
     Takes a time in seconds and returns a string hh:mm:ss
-    '''
+    """
     # Round to the nearest second.
     elapsed_rounded = int(round((elapsed)))
     
@@ -319,7 +322,7 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
     """
     """
     if args.do_eval and args.eval_filepath is None:
-        print("Splitting dataset to train/test...\n")
+        print("No validation file given: splitting dataset to train/test datasets...\n")
         train_dataset, validation_dataset = split_data(dataset, args.test_percent, args.seed)
     else:
         train_dataset = dataset
@@ -440,19 +443,19 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             #wrong_preds, right_preds = analyze_predictions(preds, out_labels_ids)
 
             tb_writer.add_scalar('Test/Accuracy', result[0], epoch_i + 1)
-            print("  Accuracy: {0:.4f}".format(result[0]))
+            print("  * Accuracy: {0:.4f}".format(result[0]))
 
             tb_writer.add_scalar('Test/Recall', result[1], epoch_i + 1)
-            print("  Recall: {0:.4f}".format(result[1]))
+            print("  * Recall: {0:.4f}".format(result[1]))
 
             tb_writer.add_scalar('Test/Precision', result[2], epoch_i + 1)
-            print("  Precision: {0:.4f}".format(result[2]))
+            print("  * Precision: {0:.4f}".format(result[2]))
 
             tb_writer.add_scalar('Test/F1 score', result[3], epoch_i + 1)
-            print("  F1 score: {0:.4f}".format(result[3]))
+            print("  * F1 score: {0:.4f}".format(result[3]))
 
             tb_writer.add_scalar('Test/MCC', result[4], epoch_i + 1)
-            print("  MCC: {0:.4f}".format(result[4]))
+            print("  * MCC: {0:.4f}".format(result[4]))
 
             plot_confusion_matrix(result[5], categories, args.output_dir)
             print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
@@ -470,6 +473,10 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
 def evaluate(args, model, validation_dataset):
     """
     """
+    # Get validation sentences.
+    validation_sentences = validation_dataset[0]
+    print(len(validation_sentences))
+    
     #Creating validation dataloader.
     validation_data, validation_sampler, validation_dataloader = create_dataloader(validation_dataset, args.batch_size, training_data=False)
     
@@ -552,18 +559,18 @@ def main(args):
         if args.gpu_id:
             torch.cuda.set_device(args.gpu_id)
             args.n_gpu = 1
-            print("GPU training available! As '--gpu_id' was set, only GPU {} {} will be used (no parallel training).\n".format(torch.cuda.get_device_name(args.gpu_id), args.gpu_id))
+            print("-> GPU training available! As '--gpu_id' was set, only GPU {} {} will be used (no parallel training).\n".format(torch.cuda.get_device_name(args.gpu_id), args.gpu_id))
         else:
             args.n_gpu = torch.cuda.device_count()
             gpu_ids = list(range(0, args.n_gpu))
             if args.n_gpu > 1:
                 model = torch.nn.DataParallel(model, device_ids=gpu_ids, output_device=gpu_ids[-1])
-            print("GPU training available! Training will use GPU(s) {}\n".format(gpu_ids))
+            print("-> GPU training available! Training will use GPU(s) {}\n".format(gpu_ids))
         args.device = torch.device("cuda")
     else:
         args.device = torch.device("cpu")
         args.n_gpu = 0
-        print("No GPU available, using the CPU instead.\n")
+        print("-> No GPU available, using the CPU instead.\n")
     model.to(args.device)  # Tell pytorch to run the model on the device.
     
     
@@ -597,13 +604,17 @@ def main(args):
     tokenized = tokenize_sentences(tokenizer, df)
     attention_masks = create_masks(tokenized)
     
-    dataset = (tokenized, labels, attention_masks)
+    dataset = (sentences, tokenized, labels, attention_masks)
     if args.do_train:
-        print("Launching training...")
+        print("\n========================================")
+        print('            Launching training            ')
+        print("========================================\n")
         train(args, model, tokenizer, dataset, tb_writer, categories)
     
     elif args.do_eval and args.eval_filepath is not None:
-        print("Launching validation...")
+        print("\n========================================")
+        print('            Launching validation          ')
+        print("========================================\n")
         evaluate(args, model, dataset)
         
     
