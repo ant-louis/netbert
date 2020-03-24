@@ -118,7 +118,7 @@ def parse_arguments():
     return arguments
 
 
-def load_training_data(filepath, balanced, interest_classes=None):
+def load_data(args, interest_classes=None):
     """
     Filepath must be a csv file with 2 columns:
     - First column is a set of sentences;
@@ -129,6 +129,16 @@ def load_training_data(filepath, balanced, interest_classes=None):
     - The csv file must have a header;
     - The first column is the index column;
     """
+    if args.do_train and args.training_filepath is not None:
+        print("Loading training data...")
+        filepath = args.training_filepath
+    elif args.do_eval and args.eval_filepath is not None:
+        print("Loading validation data...")
+        filepath = args.eval_filepath
+    else:
+        print("Error: Neither training or validation file provided with appropriate flag.")
+        sys.exit()
+    
     # Load the dataset into a pandas dataframe.
     df = pd.read_csv(filepath, delimiter=',', index_col=0)
     
@@ -140,7 +150,7 @@ def load_training_data(filepath, balanced, interest_classes=None):
         df = df[df.Class.isin(interest_classes)]
     
     # Create a balanced dataset.
-    if balanced:
+    if args.do_train and args.balanced:
         # Get the maximum number of samples of the smaller class. 
         # Note that the classes with under 1500 samples are not taken into account.
         count = df['Class'].value_counts()
@@ -157,6 +167,12 @@ def load_training_data(filepath, balanced, interest_classes=None):
     # Add categories ids column.
     categories = df.Class.unique()
     df['Class_id'] = df.apply(lambda row: np.where(categories == row.Class)[0][0], axis=1)
+    
+    # Save mapping between class and id.
+    mapping = dict(enumerate(categories))
+    with open(os.path.join(args.output_dir, 'map_classes.json'), 'w') as f:
+        json.dump(mapping, f)
+    
     return df, categories
 
 
@@ -297,7 +313,7 @@ def analyze_predictions(preds, labels, sentences):
     labels_wrong = [labels[i] for i in indices_wrong]
     preds_wrong = [preds[i] for i in indices_wrong]
     df_wrong = pd.DataFrame(list(zip(sentences_wrong, labels_wrong, preds_wrong)),
-                            columns =['Sentence', 'Class', 'Prediction'])
+                            columns =['Sentence', 'Class_id', 'Prediction_id'])
     
     # Get the right predictions.
     indices_right = np.where(preds==labels)[0]
@@ -305,7 +321,7 @@ def analyze_predictions(preds, labels, sentences):
     labels_right = [labels[i] for i in indices_right]
     preds_right = [preds[i] for i in indices_right]
     df_right = pd.DataFrame(list(zip(sentences_right, labels_right, preds_right)),
-                            columns =['Sentence', 'Class', 'Prediction'])
+                            columns =['Sentence', 'Class_id', 'Prediction_id'])
     return df_wrong, df_right
     
 
@@ -445,37 +461,24 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             print("Running Validation...")
             # After the completion of each training epoch, measure our performance on our validation set.
             t0 = time.time()
-            preds, out_label_ids = evaluate(args, model, validation_dataset)
+            result, df_wrong, df_right = evaluate(args, model, validation_dataset, categories)
             
-            # Get validation sentences.
-            validation_sentences = validation_dataset[3]
+            # Write results to tensorboard.
+            tb_writer.add_scalar('Test/Accuracy', result[0], epoch_i + 1)
+            tb_writer.add_scalar('Test/Recall', result[1], epoch_i + 1)
+            tb_writer.add_scalar('Test/Precision', result[2], epoch_i + 1)
+            tb_writer.add_scalar('Test/F1 score', result[3], epoch_i + 1)
+            tb_writer.add_scalar('Test/MCC', result[4], epoch_i + 1)
             
-            # Report results.
-            result = compute_metrics(preds, out_label_ids, categories)
-
-            # Analyze predictions
-            df_wrong, df_right = analyze_predictions(preds, out_label_ids, validation_sentences)
+            # Plot confusion matrix.
+            plot_confusion_matrix(result[5], categories, args.output_dir)
+            
+            # Save dataframes of wrong and right predictions for further analysis.
             df_wrong.to_csv(os.path.join(args.output_dir, 'wrong_predictions.csv'), index=False)
             df_right.to_csv(os.path.join(args.output_dir, 'right_predictions.csv'), index=False)
-
-            tb_writer.add_scalar('Test/Accuracy', result[0], epoch_i + 1)
-            print("  * Accuracy: {0:.4f}".format(result[0]))
-
-            tb_writer.add_scalar('Test/Recall', result[1], epoch_i + 1)
-            print("  * Recall: {0:.4f}".format(result[1]))
-
-            tb_writer.add_scalar('Test/Precision', result[2], epoch_i + 1)
-            print("  * Precision: {0:.4f}".format(result[2]))
-
-            tb_writer.add_scalar('Test/F1 score', result[3], epoch_i + 1)
-            print("  * F1 score: {0:.4f}".format(result[3]))
-
-            tb_writer.add_scalar('Test/MCC', result[4], epoch_i + 1)
-            print("  * MCC: {0:.4f}".format(result[4]))
-
-            plot_confusion_matrix(result[5], categories, args.output_dir)
+            
             print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
-    
+            
     print("Training complete!  Took: {}\n".format(format_time(time.time() - t)))
         
     print("Saving model to {}...\n.".format(args.output_dir))
@@ -486,11 +489,14 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
     return
 
 
-def evaluate(args, model, validation_dataset):
+def evaluate(args, model, validation_dataset, categories):
     """
     """    
     #Creating validation dataloader.
     validation_data, validation_sampler, validation_dataloader = create_dataloader(validation_dataset, args.batch_size, training_data=False)
+    
+    # Get validation sentences.
+    validation_sentences = validation_dataset[3]
     
     # Tracking variables
     nb_eval_steps = 0
@@ -533,7 +539,18 @@ def evaluate(args, model, validation_dataset):
     # Take the max predicitions.
     preds = np.argmax(preds, axis=1)
     
-    return preds, out_label_ids
+    # Report results.
+    result = compute_metrics(preds, out_label_ids, categories)
+    print("  * Accuracy: {0:.4f}".format(result[0]))
+    print("  * Recall: {0:.4f}".format(result[1]))
+    print("  * Precision: {0:.4f}".format(result[2]))
+    print("  * F1 score: {0:.4f}".format(result[3]))
+    print("  * MCC: {0:.4f}".format(result[4]))
+
+    # Get wrong and right predictions.
+    df_wrong, df_right = analyze_predictions(preds, out_label_ids, validation_sentences)
+    
+    return result, df_wrong, df_right
 
 
 def main(args):
@@ -596,14 +613,7 @@ def main(args):
                             'Release Notes',
                             'Maintain & Operate (Guides & TechNotes)',
                             'End User Guides']
-    
-    if args.do_train:
-        print("Loading training data...")
-        df, categories = load_training_data(args.training_filepath, args.balanced, classes_of_interest)
-    
-    elif args.do_eval and args.eval_filepath is not None:
-        print("Loading validation data...")
-        df, categories = load_validation_data(args.eval_filepath, classes_of_interest)
+    df, categories = load_data(args, classes_of_interest)
     
     # Get all sentences, their associated class and class_id.
     sentences = df.Sentence.values
@@ -629,7 +639,7 @@ def main(args):
         print("\n========================================")
         print('            Launching validation          ')
         print("========================================\n")
-        evaluate(args, model, dataset)
+        result, df_wrong, df_right = evaluate(args, model, dataset)
         
     
 if __name__=="__main__":
