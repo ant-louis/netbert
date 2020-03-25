@@ -675,7 +675,7 @@ def main(args):
         model = train(args, model, tokenizer, dataset, tb_writer, categories)
         
         # Hard-coded evaluation after training (temporary because loading fine-tuned model gives weird results)
-        #evaluate_bert_preds(args, model, tokenizer, categories)
+        evaluate_bert_preds(args, model, tokenizer, categories)
 
         
     #elif args.do_eval and args.eval_filepath is not None:
