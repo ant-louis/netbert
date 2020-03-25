@@ -566,17 +566,7 @@ def evaluate_bert_preds(args, model, tokenizer, categories):
     """
     Temporary hard-coded evaluation on predictions from Bert-base.
     """
-    df_bert_preds = pd.read_csv('./output/bert_base_cased/eval_preds.csv', delimiter=',', index_col=0)
-    df_bert_preds['Class_id'] = df_bert_preds.apply(lambda row: np.where(categories == row.Class)[0][0], axis=1)
-    bert_preds_tokenized = tokenize_sentences(tokenizer, df_bert_preds)
-    bert_preds_attention_masks = create_masks(bert_preds_tokenized)
-    bert_preds_dataset = (bert_preds_tokenized, df_bert_preds.Class_id.values, bert_preds_attention_masks, df_bert_preds.Sentence.values)
-    result, df_wrong, df_right = evaluate(args, model, bert_preds_dataset, categories)
-    df_wrong.to_csv(os.path.join(args.output_dir, 'bert_preds_netbert_wrong.csv'))
-    df_right.to_csv(os.path.join(args.output_dir, 'bert_preds_netbert_right.csv'))
-    with open(os.path.join(args.output_dir, 'scores_bert_preds.json'), 'w') as f:
-        json.dump(result, f)
-        
+    # Load queries that Bert-base classified correclty.    
     df_bert_right_preds = pd.read_csv('./output/bert_base_cased/eval_right_preds.csv', delimiter=',', index_col=0)
     df_bert_right_preds['Class_id'] = df_bert_right_preds.apply(lambda row: np.where(categories == row.Class)[0][0], axis=1)
     bert_right_preds_tokenized = tokenize_sentences(tokenizer, df_bert_right_preds)
@@ -588,6 +578,7 @@ def evaluate_bert_preds(args, model, tokenizer, categories):
     with open(os.path.join(args.output_dir, 'scores_bert_right_preds.json'), 'w') as f:
         json.dump(result, f)
         
+    # Load queries that Bert-base classified wrongly.
     df_bert_wrong_preds = pd.read_csv('./output/bert_base_cased/eval_wrong_preds.csv', delimiter=',', index_col=0)
     df_bert_wrong_preds['Class_id'] = df_bert_wrong_preds.apply(lambda row: np.where(categories == row.Class)[0][0], axis=1)
     bert_wrong_preds_tokenized = tokenize_sentences(tokenizer, df_bert_wrong_preds)
@@ -684,7 +675,7 @@ def main(args):
         model = train(args, model, tokenizer, dataset, tb_writer, categories)
         
         # Hard-coded evaluation after training (temporary because loading fine-tuned model gives weird results)
-        evaluate_bert_preds(args, model, tokenizer, categories)
+        #evaluate_bert_preds(args, model, tokenizer, categories)
 
         
     #elif args.do_eval and args.eval_filepath is not None:
