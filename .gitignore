@@ -46,14 +46,14 @@ Code/Pretraining/_/bert_multiGPU/MegatronLM/cache/*
 Code/_cache/*
 
 
-#---------------
-# Tensorboard
-#---------------
-Code/_runs/*
-Code/Extrinsic_evaluation/GLUE/runs/*
-Code/Extrinsic_evaluation/NER/runs/*
-Code/Extrinsic_evaluation/Classification/runs/*
-Code/Intrinsic_evaluation/runs/*
+#-----------------
+# Tensorboard runs
+#------------------
+#Code/_runs/*
+#Code/Extrinsic_evaluation/GLUE/runs/*
+#Code/Extrinsic_evaluation/NER/runs/*
+#Code/Extrinsic_evaluation/Classification/runs/*
+#Code/Intrinsic_evaluation/runs/*
 
 #-------------------
 # Other

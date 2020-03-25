@@ -1,10 +1,10 @@
 #!/bin/bash
 
-#export MODEL=bert_base_cased
+export MODEL=bert_base_cased
 #export MODEL=netbert-300000
 #export MODEL=netbert-830000
 #export MODEL=netbert-1027000
-export MODEL=netbert-1880000
+#export MODEL=netbert-1880000
 
 export MODELS_PATH=/raid/antoloui/Master-thesis/Code/_models/
 export TRAIN_FILE=/raid/antoloui/Master-thesis/Data/Classification/cam_query_to_doctype.csv
