@@ -82,9 +82,9 @@ def parse_arguments():
                         help="Random seed for initialization.",
     )
     parser.add_argument("--batch_size",
-                        default=32, 
+                        default=64, 
                         type=int,
-                        help="Batch size per GPU/CPU for training. For fine-tuning BERT on a specific task, the authors recommend a batch size of 16 or 32.",
+                        help="Total batch size. For fine-tuning BERT on a specific task, the authors recommend a batch size of 16 or 32 per GPU/CPU.",
     )
     parser.add_argument("--num_epochs",
                         default=4,
@@ -101,9 +101,9 @@ def parse_arguments():
                         help="Epsilon for Adam optimizer.",
     )
     parser.add_argument("--gpu_id",
-                        default=0,
+                        default=None,
                         type=int,
-                        help="Id of the GPU to use if multiple GPUs.",
+                        help="Id of the GPU to use if multiple GPUs available.",
     )
     parser.add_argument("--logging_steps",
                         default=1,
@@ -148,6 +148,11 @@ def load_data(args, interest_classes=None):
     # Keep only rows with class of interest.
     if interest_classes is not None:
         df = df[df.Class.isin(interest_classes)]
+        
+    # Deal with duplicates.
+    df.drop_duplicates(subset=['Sentence', 'Class'], keep='first', inplace=True)  # For duplicated queries with same class, keep first instance.
+    df.drop_duplicates(subset=['Sentence'], keep=False, inplace=True)  # For duplicated queries with different classes, remove them.
+    df.reset_index(drop=True, inplace=True)
     
     # Create a balanced dataset.
     if args.do_train and args.balanced:
@@ -256,35 +261,40 @@ def compute_metrics(preds, labels, classes):
     """
     Compute metrics for the classification task.
     """
+    # Create dict to store scores.
+    result = dict()
+    
     # Accuracy.
-    accuracy = accuracy_score(y_true=labels, y_pred=preds)  #accuracy = (preds==labels).mean()
+    result['Accuracy'] = accuracy_score(y_true=labels, y_pred=preds)  #accuracy = (preds==labels).mean()
     
     # NB: Averaging methods:
     #  - "macro" simply calculates the mean of the binary metrics, giving equal weight to each class.
     #  - "weighted" accounts for class imbalance by computing the average of binary metrics in which each class’s score is weighted by its presence in the true data sample.
     #  - "micro" gives each sample-class pair an equal contribution to the overall metric.
     # Precision.
-    precision = precision_score(y_true=labels, y_pred=preds, average='macro')
+    result['Precision'] = precision_score(y_true=labels, y_pred=preds, average='macro')
     
     # Recall.
-    recall = recall_score(y_true=labels, y_pred=preds, average='macro')
+    result['Recall'] = recall_score(y_true=labels, y_pred=preds, average='macro')
     
     # F1 score.
-    f1 = f1_score(y_true=labels, y_pred=preds, average='macro')
+    result['F1 score'] = f1_score(y_true=labels, y_pred=preds, average='macro')
     
     # Matthews correlation coefficient (MCC): used for imbalanced classes.
-    mcc = matthews_corrcoef(y_true=labels, y_pred=preds)
+    result['MCC'] = matthews_corrcoef(y_true=labels, y_pred=preds)
     
     # Confusion matrix.
     conf_matrix = confusion_matrix(y_true=labels, y_pred=preds, normalize='true', labels=range(len(classes)))
+    result['conf_matrix'] = conf_matrix.tolist()
     
-    return (accuracy, precision, recall, f1, mcc, conf_matrix)
+    return result
 
 
 def plot_confusion_matrix(cm, classes, outdir):
     """
     This function prints and plots the confusion matrix.
     """
+    cm = np.array(cm)
     df_cm = pd.DataFrame(cm, index=classes, columns=classes)
     
     plt.figure(figsize = (10,7))
@@ -464,18 +474,18 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             result, df_wrong, df_right = evaluate(args, model, validation_dataset, categories)
             
             # Write results to tensorboard.
-            tb_writer.add_scalar('Test/Accuracy', result[0], epoch_i + 1)
-            tb_writer.add_scalar('Test/Recall', result[1], epoch_i + 1)
-            tb_writer.add_scalar('Test/Precision', result[2], epoch_i + 1)
-            tb_writer.add_scalar('Test/F1 score', result[3], epoch_i + 1)
-            tb_writer.add_scalar('Test/MCC', result[4], epoch_i + 1)
+            tb_writer.add_scalar('Test/Accuracy', result['Accuracy'], epoch_i + 1)
+            tb_writer.add_scalar('Test/Recall', result['Recall'], epoch_i + 1)
+            tb_writer.add_scalar('Test/Precision', result['Precision'], epoch_i + 1)
+            tb_writer.add_scalar('Test/F1 score', result['F1 score'], epoch_i + 1)
+            tb_writer.add_scalar('Test/MCC', result['MCC'], epoch_i + 1)
             
             # Plot confusion matrix.
-            plot_confusion_matrix(result[5], categories, args.output_dir)
+            plot_confusion_matrix(result['conf_matrix'], categories, args.output_dir)
             
             # Save dataframes of wrong and right predictions for further analysis.
-            df_wrong.to_csv(os.path.join(args.output_dir, 'wrong_predictions.csv'), index=False)
-            df_right.to_csv(os.path.join(args.output_dir, 'right_predictions.csv'), index=False)
+            df_wrong.to_csv(os.path.join(args.output_dir, 'preds_wrong.csv'))
+            df_right.to_csv(os.path.join(args.output_dir, 'preds_right.csv'))
             
             print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
             
@@ -485,8 +495,7 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
     model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
     model_to_save.save_pretrained(args.output_dir)
     tokenizer.save_pretrained(args.output_dir)
-    torch.save(args, os.path.join(args.output_dir, 'training_args.bin'))  # Good practice: save your training arguments together with the trained model
-    return
+    return model
 
 
 def evaluate(args, model, validation_dataset, categories):
@@ -502,12 +511,12 @@ def evaluate(args, model, validation_dataset, categories):
     nb_eval_steps = 0
     preds = None
     out_label_ids = None
+    
+    # Put the model in evaluation mode--the dropout layers behave differently during evaluation.
+    model.eval()
 
     # Evaluate data for one epoch
     for batch in validation_dataloader:
-            
-        # Put the model in evaluation mode--the dropout layers behave differently during evaluation.
-        model.eval()
 
         # Add batch to GPU.
         b_input_ids, b_input_mask, b_labels = tuple(t.to(args.device) for t in batch)
@@ -541,16 +550,55 @@ def evaluate(args, model, validation_dataset, categories):
     
     # Report results.
     result = compute_metrics(preds, out_label_ids, categories)
-    print("  * Accuracy: {0:.4f}".format(result[0]))
-    print("  * Recall: {0:.4f}".format(result[1]))
-    print("  * Precision: {0:.4f}".format(result[2]))
-    print("  * F1 score: {0:.4f}".format(result[3]))
-    print("  * MCC: {0:.4f}".format(result[4]))
+    print("  * Accuracy: {0:.4f}".format(result['Accuracy']))
+    print("  * Recall: {0:.4f}".format(result['Recall']))
+    print("  * Precision: {0:.4f}".format(result['Precision']))
+    print("  * F1 score: {0:.4f}".format(result['F1 score']))
+    print("  * MCC: {0:.4f}".format(result['MCC']))
 
     # Get wrong and right predictions.
     df_wrong, df_right = analyze_predictions(preds, out_label_ids, validation_sentences)
     
     return result, df_wrong, df_right
+
+
+def evaluate_bert_preds(args, model, tokenizer, categories):
+    """
+    Temporary hard-coded evaluation on predictions from Bert-base.
+    """
+    df_bert_preds = pd.read_csv('./output/bert_base_cased/eval_preds.csv', delimiter=',', index_col=0)
+    df_bert_preds['Class_id'] = df_bert_preds.apply(lambda row: np.where(categories == row.Class)[0][0], axis=1)
+    bert_preds_tokenized = tokenize_sentences(tokenizer, df_bert_preds)
+    bert_preds_attention_masks = create_masks(bert_preds_tokenized)
+    bert_preds_dataset = (bert_preds_tokenized, df_bert_preds.Class_id.values, bert_preds_attention_masks, df_bert_preds.Sentence.values)
+    result, df_wrong, df_right = evaluate(args, model, bert_preds_dataset, categories)
+    df_wrong.to_csv(os.path.join(args.output_dir, 'bert_preds_netbert_wrong.csv'))
+    df_right.to_csv(os.path.join(args.output_dir, 'bert_preds_netbert_right.csv'))
+    with open(os.path.join(args.output_dir, 'scores_bert_preds.json'), 'w') as f:
+        json.dump(result, f)
+        
+    df_bert_right_preds = pd.read_csv('./output/bert_base_cased/eval_right_preds.csv', delimiter=',', index_col=0)
+    df_bert_right_preds['Class_id'] = df_bert_right_preds.apply(lambda row: np.where(categories == row.Class)[0][0], axis=1)
+    bert_right_preds_tokenized = tokenize_sentences(tokenizer, df_bert_right_preds)
+    bert_right_preds_attention_masks = create_masks(bert_right_preds_tokenized)
+    bert_right_preds_dataset = (bert_right_preds_tokenized, df_bert_right_preds.Class_id.values, bert_right_preds_attention_masks, df_bert_right_preds.Sentence.values)
+    result, df_wrong, df_right = evaluate(args, model, bert_right_preds_dataset, categories)
+    df_wrong.to_csv(os.path.join(args.output_dir, 'bert_right_netbert_wrong.csv'))
+    df_right.to_csv(os.path.join(args.output_dir, 'bert_right_netbert_right.csv'))
+    with open(os.path.join(args.output_dir, 'scores_bert_right_preds.json'), 'w') as f:
+        json.dump(result, f)
+        
+    df_bert_wrong_preds = pd.read_csv('./output/bert_base_cased/eval_wrong_preds.csv', delimiter=',', index_col=0)
+    df_bert_wrong_preds['Class_id'] = df_bert_wrong_preds.apply(lambda row: np.where(categories == row.Class)[0][0], axis=1)
+    bert_wrong_preds_tokenized = tokenize_sentences(tokenizer, df_bert_wrong_preds)
+    bert_wrong_preds_attention_masks = create_masks(bert_wrong_preds_tokenized)
+    bert_wrong_preds_dataset = (bert_wrong_preds_tokenized, df_bert_wrong_preds.Class_id.values, bert_wrong_preds_attention_masks, df_bert_wrong_preds.Sentence.values)
+    result, df_wrong, df_right = evaluate(args, model, bert_wrong_preds_dataset, categories)
+    df_wrong.to_csv(os.path.join(args.output_dir, 'bert_wrong_netbert_wrong.csv'))
+    df_right.to_csv(os.path.join(args.output_dir, 'bert_wrong_netbert_right.csv'))
+    with open(os.path.join(args.output_dir, 'scores_bert_wrong_preds.json'), 'w') as f:
+        json.dump(result, f)
+    return
 
 
 def main(args):
@@ -565,9 +613,6 @@ def main(args):
         args.output_dir = "./output/" + model_name + '/'
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
-        
-    # Set the seed value all over the place to make this reproducible.
-    set_seed(args.seed)
     
     print("\n========================================")
     print('               Load model                 ')
@@ -585,10 +630,10 @@ def main(args):
     
     print("Setting up CUDA & GPU...")
     if torch.cuda.is_available():
-        if args.gpu_id:
+        if args.gpu_id is not None:
             torch.cuda.set_device(args.gpu_id)
             args.n_gpu = 1
-            print("-> GPU training available! As '--gpu_id' was set, only GPU {} {} will be used (no parallel training).\n".format(torch.cuda.get_device_name(args.gpu_id), args.gpu_id))
+            print("-> GPU training available! GPU {} {} will be used (no parallel training).\n".format(torch.cuda.get_device_name(args.gpu_id), args.gpu_id))
         else:
             args.n_gpu = torch.cuda.device_count()
             gpu_ids = list(range(0, args.n_gpu))
@@ -601,6 +646,9 @@ def main(args):
         args.n_gpu = 0
         print("-> No GPU available, using the CPU instead.\n")
     model.to(args.device)  # Tell pytorch to run the model on the device.
+    
+    # Set the seed value all over the place to make this reproducible.
+    set_seed(args.seed)
     
     
     print("\n========================================")
@@ -633,13 +681,27 @@ def main(args):
         print("\n========================================")
         print('            Launching training            ')
         print("========================================\n")
-        train(args, model, tokenizer, dataset, tb_writer, categories)
-    
-    elif args.do_eval and args.eval_filepath is not None:
-        print("\n========================================")
-        print('            Launching validation          ')
-        print("========================================\n")
-        result, df_wrong, df_right = evaluate(args, model, dataset)
+        model = train(args, model, tokenizer, dataset, tb_writer, categories)
+        
+        # Hard-coded evaluation after training (temporary because loading fine-tuned model gives weird results)
+        evaluate_bert_preds(args, model, tokenizer, categories)
+
+        
+    #elif args.do_eval and args.eval_filepath is not None:
+    #    print("\n========================================")
+    #    print('            Launching validation          ')
+    #    print("========================================\n")
+    #    result, df_wrong, df_right = evaluate(args, model, dataset, categories)
+    #    
+    #    # Save dataframes of wrong and right predictions for further analysis.
+    #    df_wrong.to_csv(os.path.join(args.output_dir, 'wrong_preds.csv'))
+    #    df_right.to_csv(os.path.join(args.output_dir, 'right_preds.csv'))
+    #
+    # NB: For unknown reason, saving the fine-tuned model, then loading it
+    # and running an evaluation on the same test file leads to accuracy of
+    # 0.17 while it was 0.88 after training. I suspect the BertForSequenceClassification
+    # model not to save properly all its parameters (maybe juste loading the weights of
+    # BERT and not the classifier MLP above).
         
     
 if __name__=="__main__":
