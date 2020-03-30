@@ -25,7 +25,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_dir", 
                         type=str, 
-                        default='/raid/antoloui/Master-thesis/Data/Cleaned/Splitted/',
+                        default='/raid/antoloui/Master-thesis/Data/Cleaned/normal_cleaning/split/',
                         help="Path of the input directory."
                        )
     parser.add_argument("--output_dir", 

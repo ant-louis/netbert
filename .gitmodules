@@ -1,0 +1,3 @@
+[submodule "Code/Corpus_embedding/Aggressive_cleaning/mosesdecoder"]
+	path = Code/Corpus_embedding/Aggressive_cleaning/mosesdecoder
+	url = https://github.com/moses-smt/mosesdecoder.git
