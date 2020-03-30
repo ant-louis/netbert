@@ -68,8 +68,15 @@ def load_sentences(filepath):
     """
     Given a file of raw sentences, return the list of these sentences.
     """
+    # Load sentences from file.
     with open(filepath) as myfile:
-        sentences = [line for line in myfile]          
+        sentences = [line for line in myfile if line != '\n']
+    
+    # Only keep unique sentences.
+    sentences = list(dict.fromkeys(sentences).keys())
+    
+    # Only keep sentences with less than 1300 char (bigger sentences are messed up).
+    sentences = [sent for sent in sentences if len(sent) <= 1300]
     return sentences
 
 
@@ -175,7 +182,7 @@ def encode_sentences(sentences, tokenizer, model, device, batch_size):
         last_hidden_states = gather_sentence_outputs(outputs)
 
         # For each sentence, take the embeddings of its word from the last layer and represent that sentence by their average.
-        sentence_embeddings = [torch.mean(embeddings, dim=0).to('cpu').numpy() for embeddings in last_hidden_states]
+        sentence_embeddings = [torch.mean(embeddings[:torch.squeeze((masks == 1).nonzero(), dim=1).shape[0]], dim=0).to('cpu').numpy() for embeddings, masks in zip(last_hidden_states, attention_mask)]
         all_embeddings.extend(sentence_embeddings)
         
     # Create dataframe for storing embeddings.

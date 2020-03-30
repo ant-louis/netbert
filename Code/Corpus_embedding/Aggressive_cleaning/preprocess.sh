@@ -78,9 +78,9 @@ function preprocess {
         | grep -P -v '^\s*$' \
         | grep -P '.{50,}' \
         > "$fo"
-        echo "Finished cleaning and tokenizing data. Processed files are saved in $OUTPUT."
+        echo "Finished cleaning and tokenizing data. Processed files are saved in $fo."
     else
-        echo "Data has already been processed and saved in $OUTPUT."
+        echo "Data has already been processed and saved in $fo."
     fi
 }
 
