@@ -25,31 +25,39 @@ def parse_arguments():
     Parser.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_dir", 
-                        type=str, 
-                        default='/raid/antoloui/Master-thesis/Data/Cleaned/test/',
+    parser.add_argument("--input_dir",
+                        "-i",
+                        type=str,
+                        required=True,
                         help="Path of the input directory."
                        )
-    parser.add_argument("--output_dir", 
+    parser.add_argument("--output_dir",
+                        "-o",
                         type=str, 
-                        default='/raid/antoloui/Master-thesis/Data/Embeddings/test/',
+                        required=True,
                         help="Path of the output directory."
                        )
     parser.add_argument("--model_name_or_path",
-                        default='/raid/antoloui/Master-thesis/Code/_models/netbert-830000/',
+                        "-m",
                         type=str,
-                        #required=True,
+                        required=True,
                         help="Path to pre-trained model or shortcut name.",
     )
     parser.add_argument("--cache_dir",
-                        default='/raid/antoloui/Master-thesis/Code/_cache',
+                        "-c",
                         type=str,
                         help="Where do you want to store the pre-trained models downloaded from s3.",
     )
     parser.add_argument("--batch_size",
-                        default=768,
+                        "-b",
+                        default=64,
                         type=int, 
                         help="Batch size per GPU/CPU."
+    )
+    parser.add_argument("--dataparallelmodel",
+                        "-p",
+                        action='store_true',
+                        help="Use full capacity of GPUs parallel embedding."
     )
     arguments, _ = parser.parse_known_args()
     return arguments
@@ -237,9 +245,12 @@ def encode_chunks(model, device, sentence_chunks, padded_chunks, attention_masks
             #  - output[1] is the pooler_output, i.e. a tensor of shape (batch_size, hidden_size) being the last layer hidden-state of the first token of the sequence (classification token).
             #  - output[2] are all hidden_states, i.e. a 13-tuple of torch tensors of shape (batch_size, sequence_length, hidden_size): 12 encoders-outputs + initial embedding outputs.
             outputs = model(batch_input_ids, attention_mask=batch_attention_masks)
-            
-        # Gather outputs from the different GPUs.
-        last_hidden_states = gather_sentence_outputs(outputs)
+        
+        if args.dataparallelmodel:
+            # Gather outputs from the different GPUs.
+            last_hidden_states = gather_sentence_outputs(outputs)
+        else:
+            last_hidden_states = outputs[0]
 
         # For each sentence, take the embeddings of its word from the last layer and represent that sentence by their average.
         chunk_embeddings = [torch.mean(embeddings[:torch.squeeze((masks == 1).nonzero(), dim=1).shape[0]], dim=0).to('cpu').numpy() for embeddings, masks in zip(last_hidden_states, batch_attention_masks)]
@@ -278,7 +289,11 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     n_gpu = torch.cuda.device_count()
     if n_gpu > 1:
-        model = parallel.DataParallelModel(model)
+        if args.dataparallelmodel:
+            model = parallel.DataParallelModel(model)
+        else:
+            gpu_ids = list(range(0, n_gpu))
+            model = torch.nn.DataParallel(model, device_ids=gpu_ids, output_device=gpu_ids[-1])
     model.to(device)
     print("   Using {}.\n".format(device))
     
@@ -317,7 +332,7 @@ def main(args):
         t0 = time.time()
         df = encode_chunks(model, device, sentence_chunks, padded_chunks, attention_masks, args.batch_size)
         elapsed = time.time() - t0
-        print("     - {} chunks encoded. -  Took: {:}  ({:.2f} s/sentences)".format(len(padded_chunks), format_time(elapsed), elapsed/len(sentence_chunks)))
+        print("     - {} chunks encoded. -  Took: {:}  ({:.2f} s/chunks)".format(len(padded_chunks), format_time(elapsed), elapsed/len(padded_chunks)))
 
         print("   Saving dataframe to {}...".format(args.output_dir))
         t0 = time.time()
