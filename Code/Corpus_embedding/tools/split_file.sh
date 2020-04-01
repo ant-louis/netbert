@@ -1,7 +1,10 @@
 #!/bin/bash
 
-export INFILE=train.raw  # test.raw, dev.raw, train.raw
-export OUT_NAME=train   # test, dev, train
+export DIRPATH=/raid/antoloui/Master-thesis/Data/Cleaned
+export FILENAME=dev # test, dev, train
+
+export INFILE=$DIRPATH/$FILENAME.raw
+export OUT_NAME=$DIRPATH/$FILENAME   
 
 export NB_LINES=1000000
 export SUFFIX=.raw

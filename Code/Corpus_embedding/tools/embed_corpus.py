@@ -82,8 +82,8 @@ def load_sentences(filepath):
     with open(filepath) as myfile:
         sentences = [line for line in myfile if line != '\n']
     
-    # Only keep unique sentences.
-    sentences = list(dict.fromkeys(sentences).keys())
+    ## Only keep unique sentences.
+    #sentences = list(dict.fromkeys(sentences).keys())
     
     # Only keep sentences with less than 1300 char (bigger sentences are messed up).
     sentences = [sent for sent in sentences if len(sent) <= 1300]
