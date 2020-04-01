@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export IN_DIR=/raid/antoloui/Master-thesis/Data/Cleaned/
+export IN_DIR=/raid/antoloui/Master-thesis/Data/Cleaned/split/
 export OUT_DIR=/raid/antoloui/Master-thesis/Data/Embeddings/
 export CACHE=/raid/antoloui/Master-thesis/Code/_cache/
 
