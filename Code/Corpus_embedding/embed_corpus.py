@@ -208,7 +208,7 @@ def gather_word_outputs(outputs):
     return gathered
 
 
-def encode_chunks(model, device, sentence_chunks, padded_chunks, attention_masks, batch_size):
+def encode_chunks(args, model, sentence_chunks, padded_chunks, attention_masks):
     """
     Encoding sentences with CPU/GPU(s).
     
@@ -220,12 +220,12 @@ def encode_chunks(model, device, sentence_chunks, padded_chunks, attention_masks
     However, once again, the utilisation of the GPUs is very volatile (never at 100% all the time).
     """
     all_embeddings = []
-    iterator = range(0, len(sentence_chunks), batch_size)
+    iterator = range(0, len(sentence_chunks), args.batch_size)
     for batch_idx in tqdm(iterator, desc="   Batches"):
         
         # Get the batch indices.
         batch_start = batch_idx
-        batch_end = min(batch_start + batch_size, len(sentence_chunks))
+        batch_end = min(batch_start + args.batch_size, len(sentence_chunks))
         
         # Get the current batch.
         batch_input_ids = padded_chunks[batch_start:batch_end]
@@ -233,9 +233,9 @@ def encode_chunks(model, device, sentence_chunks, padded_chunks, attention_masks
         
         # Convert model inputs to torch tensors and push them to GPUs.
         batch_input_ids = torch.tensor(batch_input_ids)
-        batch_input_ids = batch_input_ids.to(device)
+        batch_input_ids = batch_input_ids.to(args.device)
         batch_attention_masks = torch.tensor(batch_attention_masks)
-        batch_attention_masks = batch_attention_masks.to(device)
+        batch_attention_masks = batch_attention_masks.to(args.device)
         
         # Encode batch.
         model.eval()
@@ -286,16 +286,16 @@ def main(args):
     print("\n===================================================")
     print("Setting up CPU / CUDA & GPUs...")
     print("===================================================\n")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    n_gpu = torch.cuda.device_count()
-    if n_gpu > 1:
+    args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    args.n_gpu = torch.cuda.device_count()
+    if args.n_gpu > 1:
         if args.dataparallelmodel:
             model = parallel.DataParallelModel(model)
         else:
-            gpu_ids = list(range(0, n_gpu))
+            gpu_ids = list(range(0, args.n_gpu))
             model = torch.nn.DataParallel(model, device_ids=gpu_ids, output_device=gpu_ids[-1])
-    model.to(device)
-    print("   Using {}.\n".format(device))
+    model.to(args.device)
+    print("   Using {}.\n".format(args.device))
     
     print("\n===================================================")
     print("Encoding sentences...")
@@ -330,7 +330,7 @@ def main(args):
 
         print("   Encoding chunks...")
         t0 = time.time()
-        df = encode_chunks(model, device, sentence_chunks, padded_chunks, attention_masks, args.batch_size)
+        df = encode_chunks(args, model, sentence_chunks, padded_chunks, attention_masks)
         elapsed = time.time() - t0
         print("     - {} chunks encoded. -  Took: {:}  ({:.2f} s/chunks)".format(len(padded_chunks), format_time(elapsed), elapsed/len(padded_chunks)))
 
