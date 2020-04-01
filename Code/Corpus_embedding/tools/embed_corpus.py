@@ -30,13 +30,13 @@ def parse_arguments():
                         type=str,
                         required=True,
                         help="Path of the input directory."
-                       )
+    )
     parser.add_argument("--output_dir",
                         "-o",
                         type=str, 
                         required=True,
                         help="Path of the output directory."
-                       )
+    )
     parser.add_argument("--model_name_or_path",
                         "-m",
                         type=str,
