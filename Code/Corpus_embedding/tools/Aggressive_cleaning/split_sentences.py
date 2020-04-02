@@ -9,9 +9,7 @@ def split_sentences(text):
     """
     Split text into 1 sentence per line
     """
-    # Tokenize sentences
     sent_list = sent_tokenize(text)
-    
     return '\n'.join(sent_list)
 
 
