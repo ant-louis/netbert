@@ -5,7 +5,7 @@ export OUT_DIR=/raid/antoloui/Master-thesis/Data/Embeddings/
 export CACHE=/raid/antoloui/Master-thesis/Code/_cache/
 
 export MODEL=/raid/antoloui/Master-thesis/Code/_models/netbert-830000/
-export BATCH_SIZE=1408
+export BATCH_SIZE=1024
 
 
 python -W ignore -u tools/embed_corpus.py \
