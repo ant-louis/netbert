@@ -37,6 +37,7 @@ def main(args):
     filepaths = glob.glob(args.input_dir + '*.h5')
     for file in tqdm(filepaths, desc='Files'):
         df_file = pd.read_hdf(file)
+        df_file['Chunk'] = df_file['Chunk'].astype(str)
         df = pd.concat([df, df_file], ignore_index=True, sort=False)
     print("  - Done.")
     
@@ -46,9 +47,14 @@ def main(args):
     df.reset_index(drop=True, inplace=True)
     print("  - Done.")
     
-    output_path = args.output_dir + '/all.h5'
-    print("Saving concatenated embeddings into {}...".format(output_path))
-    df.to_hdf(output_path, key='df', mode='w')
+    print("Saving concatenated embeddings into {}...".format(args.output_dir))
+    # With hdf (problem: too big)
+    #output_path = args.output_dir + '/all.h5'
+    #df.to_hdf(output_path, key='df', mode='w')
+    
+    # With feather.
+    output_path = args.output_dir + '/all.feather'
+    df.to_feather(output_path)
     print("  - Done.")
 
 
