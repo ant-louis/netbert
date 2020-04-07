@@ -47,14 +47,10 @@ def main(args):
     df.reset_index(drop=True, inplace=True)
     print("  - Done.")
     
+    # NB: saving does not work for now (dataframe too large)
     print("Saving concatenated embeddings into {}...".format(args.output_dir))
-    # With hdf (problem: too big)
-    #output_path = args.output_dir + '/all.h5'
-    #df.to_hdf(output_path, key='df', mode='w')
-    
-    # With feather.
-    output_path = args.output_dir + '/all.feather'
-    df.to_feather(output_path)
+    output_path = args.output_dir + '/all.h5'
+    df.to_hdf(output_path, key='df', mode='w')
     print("  - Done.")
 
 
