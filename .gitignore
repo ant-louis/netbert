@@ -24,7 +24,7 @@ __pycache__
 Code/Pretraining/_/bert_singleGPU/models/*
 Code/Pretraining/_/bert_multiGPU/MegatronLM/model_checkpoints/*
 Code/_models/*
-Code/_/Search/models/*
+Code/-/Search/models/*
 
 
 #-------------------
@@ -58,5 +58,5 @@ Code/_cache/*
 #-------------------
 # Other
 #-------------------
-Code/_/transformers/*
-Code/_/bertsearch/*
+Code/-/transformers/*
+Code/-/bertsearch/*
