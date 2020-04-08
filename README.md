@@ -1,6 +1,6 @@
 # NetBERT: a pre-trained computer networking language representation model
 
-This repository provides the code for pre-training and fine-tuning NetBERT, a computer networking language representation model designed for networking text mining tasks such as named entity recognition (NER) or document classification.
+This repository provides the code for pre-training and fine-tuning NetBERT, a computer networking language representation model designed for networking text mining tasks such as named entity recognition (NER) or document classification. 
 
 ## Table of contents
 1. [Motivation](#motivation)
