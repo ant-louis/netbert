@@ -44,7 +44,7 @@ _cache/*
 #-----------------
 # Tensorboard runs
 #------------------
-#_runs/*
+_runs/*
 #extrinsic_evaluation/NER/runs/*
 #extrinsic_evaluation/classification/runs/*
 #intrinsic_evaluation/runs/*
