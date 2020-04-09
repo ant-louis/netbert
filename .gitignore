@@ -1,9 +1,9 @@
 #-----------------
 # Data
 #----------------
-Data/*
-Code/extrinsic_evaluation/QA/UnsupervisedQA/data/*
-Code/intrinsic_evaluation/data/*
+_data/*
+extrinsic_evaluation/QA/UnsupervisedQA/data/*
+intrinsic_evaluation/data/*
 
 
 #----------------
@@ -19,37 +19,32 @@ __pycache__
 #--------------------
 # Model checkpoints
 #-------------------
-Code/pretraining/-/bert_singleGPU/models/*
-Code/pretraining/-/bert_multiGPU/MegatronLM/model_checkpoints/*
-Code/_models/*
-Code/-/Search/models/*
+pretraining/-/bert_singleGPU/models/*
+pretraining/-/bert_multiGPU/MegatronLM/model_checkpoints/*
+_models/*
+netbert_search/models/*
 
 
 #-------------------
 # Training output
 #-------------------
-Code/pretraining/-/bert_singleGPU/pretraining_output_fullfat/*
-Code/pretraining/-/bert_singleGPU/pretraining_output_megafat/*
-Code/extrinsic_evaluation/NER/output/*
-Code/extrinsic_evaluation/classification/output/*
+pretraining/-/bert_singleGPU/pretraining_output_fullfat/*
+pretraining/-/bert_singleGPU/pretraining_output_megafat/*
+extrinsic_evaluation/NER/output/*
+extrinsic_evaluation/classification/output/*
 
 
 #----------------
 # Cache
 #----------------
-Code/pretraining/-/bert_multiGPU/MegatronLM/cache/*
-Code/_cache/*
+pretraining/-/bert_multiGPU/MegatronLM/cache/*
+_cache/*
 
 
 #-----------------
 # Tensorboard runs
 #------------------
-#Code/_runs/*
-#Code/extrinsic_evaluation/NER/runs/*
-#Code/extrinsic_evaluation/classification/runs/*
-#Code/intrinsic_evaluation/runs/*
-
-#-------------------
-# Other
-#-------------------
-Code/-/bertsearch/*
+#_runs/*
+#extrinsic_evaluation/NER/runs/*
+#extrinsic_evaluation/classification/runs/*
+#intrinsic_evaluation/runs/*
