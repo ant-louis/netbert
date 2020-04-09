@@ -7,7 +7,7 @@ This repository provides the code for pre-training and fine-tuning NetBERT, a co
 2. [Datasets](#datasets)
 3. [Pre-training](#pretraining)
 4. [Fine-tuning](#finetuning)
-5. [About me](#about)
+5. [Search](#search)
 
 ## Motivation <a name="intro"></a>
 Text mining is becoming increasingly important at Cisco as the number of product documents becomes larger and larger. Being able to retrieve the right information in the sorthest time possible is crucial, as it would increase the productivity of Cisco's employees by taking away the tedious task of searching the information among long technical documents.
@@ -33,13 +33,13 @@ The pretraining of BERT is done using the [transformers](https://github.com/hugg
 *Currently training...*
 
 
-## Fine-tuning <a name="pretraining"></a>
+## Fine-tuning <a name="finetuning"></a>
 
 ### Named Entity Recognition (NER)
 *Coming up...*
 
-### Document classification
+### Sentence classification
 *Coming up...*
 
-## About <a name="about"></a>
-This project takes place as part of my Master Thesis in Data Science & Engineering @University of Liège, Belgium. It is combined with an internship @Cisco.
+## Search <a name="search"></a>
+*Coming up...*
