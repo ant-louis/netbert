@@ -3,6 +3,8 @@ import sys
 import glob
 import pickle
 import argparse
+import time
+import datetime
 
 import faiss
 import pandas as pd
@@ -36,6 +38,13 @@ def parse_arguments():
     )
     arguments, _ = parser.parse_known_args()
     return arguments
+
+
+def format_time(elapsed):
+    """
+    Takes a time in seconds and returns a string hh:mm:ss
+    """
+    return str(datetime.timedelta(seconds=int(round((elapsed)))))
 
 
 def load_embeddings(input_dir):
@@ -98,6 +107,7 @@ def create_faiss_index(vecs, method='l2', n_gpu=0):
 def main(args):
     """
     """
+    t0 = time.time()
     print("\nLoad all embeddings of Cisco corpus from {}...".format(args.input_dir))
     chunks, embeddings = load_embeddings(args.input_dir)
     
@@ -116,7 +126,7 @@ def main(args):
     with open(os.path.join(args.output_dir,"cisco_chunks.txt"), "wb") as f:
         pickle.dump(chunks, f)
 
-    print("\nFAISS index created.")
+    print("\nFAISS index created.  -  Took: {}\n".format(format_time(time.time() - t0)))
     
     
     
