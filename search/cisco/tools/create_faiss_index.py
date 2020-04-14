@@ -6,10 +6,12 @@ import argparse
 import time
 import datetime
 
-import faiss
 import pandas as pd
-import numpy as np
 from tqdm import tqdm
+
+import faiss
+import numpy as np
+from sklearn import preprocessing
 
 
 
@@ -19,22 +21,26 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_dir",
-                        "-i",
                         type=str,
                         required=True,
                         help="Path to the input directory where all the .h5 files are located.",
     )
     parser.add_argument("--output_dir",
-                        "-o",
                         type=str,
                         default="",
                         help="Path to output directory. If not mentioned, same as input directory.",
     )
     parser.add_argument("--n_gpu",
-                        "-n",
                         type=int,
                         default=0,
                         help="Number of GPUs to use for creating FAISS index.",
+    )
+    parser.add_argument("--method",
+                        "-m",
+                        type=str,
+                        default='l2',
+                        choices=['l2','ip', 'cos'],
+                        help="Distance method used for comparing embeddings.",
     )
     arguments, _ = parser.parse_known_args()
     return arguments
@@ -84,9 +90,13 @@ def create_faiss_index(vecs, method='l2', n_gpu=0):
     if method=='l2':
         index = faiss.IndexFlatL2(vecs.shape[1])  # Exact Search for L2
     elif method=='ip':
-        index = faiss.IndexFlatIP(vecs.shape[1])  # Exact Search for Inner Product (also for cosine, just normalize vectors beforehand)
+        index = faiss.IndexFlatIP(vecs.shape[1])  # Exact Search for Inner Product
+    elif method=='cos':
+        # Cosime similarity comes down to normalizing the embeddings beforehand and then applying inner product.
+        vecs = preprocessing.normalize(vecs, norm='l2')
+        index = faiss.IndexFlatIP(vecs.shape[1])
     else:
-        print("Error: Please choose between L2 distance ('l2') or Inner Product ('ip') as brute-force method for exact search. Exiting...")
+        print("Error: Please choose between L2 Distance ('l2'), Inner Product Distance ('ip') or Cosine Distance ('cos') as brute-force method for exact search. Exiting...")
         sys.exit(0)
     
     # Convert to flat GPU index.
@@ -120,13 +130,13 @@ def main(args):
     os.makedirs(args.output_dir, exist_ok=True)
     
     print("\nSave index to {}...".format(args.output_dir))
-    faiss.write_index(index, os.path.join(args.output_dir, "cisco_corpus.index"))
+    faiss.write_index(index, os.path.join(args.output_dir, args.method + ".index"))
     
     print("\nSave chunks to {}...".format(args.output_dir))
-    with open(os.path.join(args.output_dir,"cisco_chunks.txt"), "wb") as f:
+    with open(os.path.join(args.output_dir, "chunks.txt"), "wb") as f:
         pickle.dump(chunks, f)
 
-    print("\nFAISS index created.  -  Took: {}\n".format(format_time(time.time() - t0)))
+    print("\nDone.  -  Took: {}\n".format(format_time(time.time() - t0)))
     
     
     
