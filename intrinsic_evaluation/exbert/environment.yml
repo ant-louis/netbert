@@ -6,6 +6,8 @@ channels:
   - anaconda
 dependencies:
   - connexion=1.5.3
+  - werkzeug==0.15.6
+  - flask==1.1.1
   - h5py
   - spacy
   - boto3

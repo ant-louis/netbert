@@ -47,9 +47,10 @@ def has_connected_dash(s):
 def text2sentences(path):
     """Extract the text from the indicated path"""
     with open(path, 'r') as src:
-        doc = nlp(src.read())
-
-    sentences = [sent.string.strip() for sent in doc.sents]
+        #doc = nlp(src.read())
+        #sentences = [sent.string.strip() for sent in doc.sents]
+        
+        sentences = src.readlines()
     return sentences
 
 # String -> String

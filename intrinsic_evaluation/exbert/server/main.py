@@ -14,7 +14,7 @@ from utils.mask_att import strip_attention
 import connexion
 import os
 import pickle
-import utils.path_fixes as pf
+import utils.path_fixes as pf  # This file contains all data paths.
 import numpy as np
 
 from data.processing.create_faiss import Indexes, ContextIndexes
@@ -40,10 +40,10 @@ class FaissLoader:
 
     def load_info(self):
         """Allow values to have default NONE, load all at once after first load of flask"""
-        self.embedding_faiss = Indexes(pf.WOZ_EMBEDDINGS)
-        self.context_faiss = ContextIndexes(pf.WOZ_CONTEXT)
-        self.embedding_corpus = AttentionCorpusEmbeddings(pf.WOZ_HDF5)
-        self.context_corpus  = AttentionCorpusEmbeddings(pf.WOZ_CONTEXT_HDF5)
+        self.embedding_faiss = Indexes(pf.CISCO_EMBEDDINGS)
+        self.context_faiss = ContextIndexes(pf.CISCO_CONTEXT)
+        self.embedding_corpus = AttentionCorpusEmbeddings(pf.CISCO_HDF5)
+        self.context_corpus  = AttentionCorpusEmbeddings(pf.CISCO_CONTEXT_HDF5)
 
 faiss_loader = FaissLoader()
 
@@ -61,12 +61,13 @@ def send_static_client(path):
     """
     return send_from_directory(str(pf.CLIENT_DIST), path)
 
+
 #======================================================================
 ## INITIALIZATION OF MODEL ##
 #======================================================================
-bert_version = 'bert-base-uncased'
-model = BertModel.from_pretrained(bert_version)
-tokenizer = BertTokenizer.from_pretrained(bert_version)
+bert_version = 'bert-base-cased'
+model = BertModel.from_pretrained(bert_version, cache_dir='/raid/antoloui/Master-thesis/_cache')
+tokenizer = BertTokenizer.from_pretrained(bert_version, cache_dir='/raid/antoloui/Master-thesis/_cache')
 details_data = AttentionDetailsData(model, tokenizer)
 
 p_file = "_store/simple.pckl"
