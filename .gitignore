@@ -4,7 +4,7 @@
 _data/*
 extrinsic_evaluation/qa/UnsupervisedQA/data/*
 intrinsic_evaluation/data/*
-
+intrinsic_evaluation/exbert/server/data/dev/*
 
 #----------------
 # Weird stuff

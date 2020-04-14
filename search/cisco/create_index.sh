@@ -3,7 +3,7 @@
 INDIR=/raid/antoloui/Master-thesis/_data/embeddings/
 OUTDIR=/raid/antoloui/Master-thesis/_data/search/cisco/
 N_GPU=8
-METHOD=ip
+METHOD=cos
 
 
 python -W ignore -u tools/create_faiss_index.py \

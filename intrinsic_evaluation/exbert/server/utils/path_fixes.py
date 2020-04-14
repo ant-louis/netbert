@@ -10,6 +10,9 @@ DATASET_DIR = Path.home() / 'Datasets'
 ROOT_DIR = Path(os.path.abspath(__file__)).parent.parent.parent
 WIKI_PATH = DATASET_DIR / 'wikipedia'
 
+# SERVING STATIC FILES
+CLIENT_DIST = ROOT_DIR / 'client' / 'dist'
+
 # ==============================================================
 # WIZARD OF OZ 
 # (should I put this into a dictionary? That would make more sense...)
@@ -27,5 +30,20 @@ WOZ_CONTEXT = WOZ_DIR / 'headContext'
 WOZ_CONTEXT_HDF5 = WOZ_CONTEXT / 'combined.hdf5'
 WOZ_CONTEXT_LAYER_TEMPLATE = WOZ_CONTEXT / LAYER_TEMPLATE
 
-# SERVING STATIC FILES
-CLIENT_DIST = ROOT_DIR / 'client' / 'dist'
+
+
+# ==============================================================
+# CISCO 
+# ==============================================================
+CISCO_DIR = DATA_DIR / 'dev'
+CISCO_PATH = '/raid/antoloui/Master-thesis/_data/cleaned/dev.raw'
+
+## EMBEDDINGS
+CISCO_EMBEDDINGS = CISCO_DIR / 'embeddings'
+CISCO_HDF5 = CISCO_EMBEDDINGS / 'combined.hdf5'
+CISCO_LAYER_TEMPLATE = CISCO_EMBEDDINGS / LAYER_TEMPLATE
+
+## HEAD INFO
+CISCO_CONTEXT = CISCO_DIR / 'headContext'
+CISCO_CONTEXT_HDF5 = CISCO_CONTEXT / 'combined.hdf5'
+CISCO_CONTEXT_LAYER_TEMPLATE = CISCO_CONTEXT / LAYER_TEMPLATE
