@@ -213,6 +213,15 @@ def download_all(rfc_base_url, rfc_ids, outdir):
             print("{}: HTTP Error 404 - Not Found.".format(rfc))
             
     return errors
+
+
+def update_dataframe(df, errors):
+    """
+    Given the download errors, remove the corresponding rfc from the database.
+    """
+    df['Name'] = df['Name'].str.lower()
+    df = df[~df['Name'].isin(errors)]
+    return df
         
 
 def main(args):
@@ -226,13 +235,16 @@ def main(args):
     
     print("\nProcess index lines...")
     df = create_dataframe(rfc_lines)
-    os.makedirs(args.outdir, exist_ok=True)
-    df.to_csv(os.path.join(args.outdir, 'info.csv'), sep=',', encoding='utf-8', float_format='%.10f', decimal='.')
     
     print("\nDownload all RFC files to {}...".format(os.path.join(args.outdir, 'raw')))
     rfc_ids = df['Name'].str.lower().tolist()
     errors = download_all(args.rfc_base_url, rfc_ids, os.path.join(args.outdir, 'raw'))
     print("Download errors: {}".format(str(errors)))
+    
+    # Remove from df the rfc that were not downloaded (as it is this database that is used for cleaning files).
+    df = update_dataframe(df, errors)
+    os.makedirs(args.outdir, exist_ok=True)
+    df.to_csv(os.path.join(args.outdir, 'info.csv'), sep=',', encoding='utf-8', float_format='%.10f', decimal='.')
     print("\nDONE.")
 
 
