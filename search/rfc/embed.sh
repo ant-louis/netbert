@@ -1,21 +1,15 @@
 #!/bin/bash
 
 #---------------------------------------------------------------------
-# CISCO CORPUS DATA
+# DATA DIRECTORIES
 #---------------------------------------------------------------------
-#export IN_DIR=/raid/antoloui/Master-thesis/Data/Cleaned/split/
-#export OUT_DIR=/raid/antoloui/Master-thesis/Data/Embeddings/
-
-#---------------------------------------------------------------------
-# QA DATA
-#---------------------------------------------------------------------
-export IN_DIR=/raid/antoloui/Master-thesis/_data/qa/
-export OUT_DIR=/raid/antoloui/Master-thesis/_data/qa/embeddings/
+export IN_DIR=/raid/antoloui/Master-thesis/_data/search/rfc/processed/
+export OUT_DIR=/raid/antoloui/Master-thesis/_data/search/rfc/embeddings/
 
 #---------------------------------------------------------------------
 # MODEL AND PARAMATERS
 #---------------------------------------------------------------------
-export MODEL=/raid/antoloui/Master-thesis/_models/bert_base_cased/
+export MODEL=/raid/antoloui/Master-thesis/_models/netbert-final/
 export CACHE=/raid/antoloui/Master-thesis/_cache/
 export BATCH_SIZE=1024
 

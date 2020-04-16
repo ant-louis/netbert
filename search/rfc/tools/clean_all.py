@@ -60,13 +60,14 @@ def process_section_names(text_list):
     sections = text_list
 
     # Join sections together.
-    section = ' - '.join(sections) + ' * '
+    section = '- ' + ' - '.join(sections) + ' ' if (sections and sections[0]) else ''
 
     # Join sentences together.
     sentence = ' '.join(sentences)
-
-    # Join everything together.
-    return section + sentence
+    
+    # Build formatted line.
+    line = section + '* ' + sentence
+    return line
 
 
 def process_lines(lines, name, title, date, author):
@@ -127,7 +128,7 @@ def process_lines(lines, name, title, date, author):
             
     # Remove lines with too many spaces.
     new_lines = [line for line in new_lines if line.count(' ')/max(len(line), 1) < 0.5]
-        
+    
     # Remove all multiple spaces.
     new_lines = [re.sub('\s{2,}', ' ', line) for line in new_lines]
     
@@ -136,18 +137,12 @@ def process_lines(lines, name, title, date, author):
     
     # If line begins with a number, remove it.
     new_lines = [line.split(maxsplit=1)[1] if (len(line.split(maxsplit=1))>1 and line.split(maxsplit=1)[0][0].isdigit()) else line for line in new_lines]
-
-    # Remove lines from Table of contents.
-    new_lines = [line for line in new_lines if not line.startswith("Table of Contents.")]
     
     # Remove too long lines.
     new_lines = [line for line in new_lines if len(line) < 1500]
     
     # Add title of RFC to beginning of each chunk.
-    new_lines = [ "* {} - {} - {}".format(name, title, line) for line in new_lines]
-    
-    # Remove lines being only titles of sections.
-    new_lines = [line for line in new_lines if not line.split('*')[1].split()[-1] == '-']
+    new_lines = [ "* {} - {} {}".format(name, title, line) for line in new_lines]
     
     # Add 'about' line.
     about = write_about(name, title, date, author)
