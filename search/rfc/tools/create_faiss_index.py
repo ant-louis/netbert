@@ -80,7 +80,7 @@ def load_embeddings(input_dir):
     return chunks, embeddings
 
 
-def create_faiss_index(vecs, method='l2', n_gpu=0):
+def create_faiss_index(vecs, method, n_gpu):
     """
     Create FAISS index on GPU(s).
     To create a GPU index with FAISS, one first needs to create it on CPU then copy it on GPU. 
@@ -121,8 +121,8 @@ def main(args):
     print("\nLoad all embeddings of Cisco corpus from {}...".format(args.input_dir))
     chunks, embeddings = load_embeddings(args.input_dir)
     
-    print("Create FAISS (GPU) index...")
-    index = create_faiss_index(vecs=embeddings, n_gpu=args.n_gpu)
+    print("Create {} FAISS index...".format(args.method))
+    index = create_faiss_index(vecs=embeddings, method=args.method, n_gpu=args.n_gpu)
     
     # Make sure output_dir exists, otherwise save in input_dir.
     if not args.output_dir:
