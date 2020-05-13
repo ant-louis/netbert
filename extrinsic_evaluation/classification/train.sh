@@ -1,21 +1,21 @@
 #!/bin/bash
 
-#export MODEL=bert_base_cased
-#export MODEL=netbert-300000
-#export MODEL=netbert-830000
-#export MODEL=netbert-1027000
-export MODEL=netbert-1880000
+export MODEL=bert_base_cased
+#export MODEL=netbert-final
 
-export MODELS_PATH=/raid/antoloui/Master-thesis/Code/_models/
-export TRAIN_FILE=/raid/antoloui/Master-thesis/Data/Classification/cam_query_to_doctype.csv
-export EPOCHS=6
-export BATCHES=256
+export MODELS_PATH=/raid/antoloui/Master-thesis/_models/
+export TRAIN_FILE=/raid/antoloui/Master-thesis/_data/classification/cam_query_to_doctype.csv
+export LABELS=5
+
+export EPOCHS=4
+export BATCHES=16  #16, 32
+export LR=5e-5  #5e-5, 3e-5, 2e-5
 
 python -W ignore -u train.py \
     --model_name_or_path $MODELS_PATH/$MODEL \
     --do_train \
     --training_filepath $TRAIN_FILE \
+    --num_labels $LABELS \
     --num_epochs $EPOCHS \
     --batch_size $BATCHES \
-    --balanced \
-    --do_eval |& tee ./output/$MODEL/training_logs.txt
+    --learning_rate $LR  #|& tee ./output/$MODEL/training_logs.txt

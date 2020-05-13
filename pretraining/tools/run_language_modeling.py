@@ -28,6 +28,7 @@ import pickle
 import random
 import re
 import shutil
+import json
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -799,9 +800,11 @@ def main():
             result = evaluate(args, model, tokenizer, prefix=prefix)
             result = dict((k + "_{}".format(global_step), v) for k, v in result.items())
             results.update(result)
+            
+        # Write evaluation results.
+        with open('../eval_results.json', 'w+') as out:
+            json.dump(results, out)
 
-    return results
-
-
+    
 if __name__ == "__main__":
     main()
