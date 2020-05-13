@@ -14,11 +14,11 @@ Text mining is becoming increasingly important at Cisco as the number of product
 
 While recent advancements in natural language processing (NLP) has allowed major improvements for various text mining tasks, applying them directly to Cisco documents often yields to unsatisfactory results due to a word distribution shift from general domain corpora to Cisco computer networking corpora. 
 
-Therefore, we introduce NetBERT (Bidirectional Encoder Representations from Transformers for Computer Networking Text Mining), which is a domain-specific language representation model pre-trained on large-scale Cisco corpora.
+Therefore, we introduce NetBERT, a domain-specific language representation model pre-trained on large-scale Cisco corpora.
 
 
 ## Datasets <a name="datasets"></a>
-The original dataset used for pre-training BERT consists of all content of [cisco.com](https://www.cisco.com/) resulting in about 30GB of uncleaned text data. This dataset is further preprocessed before training (see [Cleaning](./Code/Cleaning/README.md) for detailed information about data cleaning). The resulting dataset has the following properties:
+The original dataset used for pre-training BERT consists of all text content scrapped from [cisco.com](https://www.cisco.com/), resulting in about 30GB of uncleaned text data. This dataset is further preprocessed before training. The final dataset has the following properties:
 
 |         | Documents  | Sentences  | Words   | Chars | Size   |
 |---------|------------|------------|-------- |-------|--------|
@@ -28,7 +28,8 @@ The original dataset used for pre-training BERT consists of all content of [cisc
 
 
 ## Pre-training <a name="pretraining"></a>
-The pretraining of BERT is done using the [transformers](https://github.com/huggingface/transformers) library, on 8 GPUs NVIDIA Tesla V100-SXM2 32GB. It takes about 36 hours to train the model over one epoch.
+The pre-training of BERT is done using the [transformers](https://github.com/huggingface/transformers) library.
+On 8 GPUs NVIDIA Tesla V100-SXM2 32GB, it takes about 36 hours to train the model over one epoch.
 
 *Currently training...*
 
