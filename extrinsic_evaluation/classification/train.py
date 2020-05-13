@@ -67,7 +67,7 @@ def parse_arguments():
                         help="Where do you want to store the pre-trained models downloaded from s3.",
     )
     parser.add_argument("--num_labels",
-                        default=5,
+                        required=True,
                         type=int,
                         help="Number of classification labels.",
     )
@@ -82,21 +82,22 @@ def parse_arguments():
                         help="Random seed for initialization.",
     )
     parser.add_argument("--batch_size",
-                        default=64, 
+                        default=32,
                         type=int,
                         help="Total batch size. For fine-tuning BERT on a specific task, the authors recommend a batch size of 16 or 32 per GPU/CPU.",
     )
     parser.add_argument("--num_epochs",
                         default=4,
                         type=int,
-                        help="Total number of training epochs to perform. Authors recommend between 2 and 4",
+                        help="Total number of training epochs to perform. Authors recommend 2,3 or 4.",
     )
     parser.add_argument("--learning_rate",
                         default=5e-5,
                         type=float,
-                        help="The initial learning rate for Adam.")
+                        help="The initial learning rate for Adam. The authors recommend 5e-5, 3e-5 or 2e-5."
+    )
     parser.add_argument("--adam_epsilon",
-                        default=1e-8,
+                        default=1e-6,
                         type=float,
                         help="Epsilon for Adam optimizer.",
     )
@@ -106,7 +107,7 @@ def parse_arguments():
                         help="Id of the GPU to use if multiple GPUs available.",
     )
     parser.add_argument("--logging_steps",
-                        default=1,
+                        default=10,
                         type=int,
                         help="Log every X updates steps.",
     )
@@ -480,21 +481,21 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             tb_writer.add_scalar('Test/F1 score', result['F1 score'], epoch_i + 1)
             tb_writer.add_scalar('Test/MCC', result['MCC'], epoch_i + 1)
             
-            # Plot confusion matrix.
-            plot_confusion_matrix(result['conf_matrix'], categories, args.output_dir)
+            ## Plot confusion matrix.
+            #plot_confusion_matrix(result['conf_matrix'], categories, args.output_dir)
             
-            # Save dataframes of wrong and right predictions for further analysis.
-            df_wrong.to_csv(os.path.join(args.output_dir, 'preds_wrong.csv'))
-            df_right.to_csv(os.path.join(args.output_dir, 'preds_right.csv'))
+            ## Save dataframes of wrong and right predictions for further analysis.
+            #df_wrong.to_csv(os.path.join(args.output_dir, 'preds_wrong.csv'))
+            #df_right.to_csv(os.path.join(args.output_dir, 'preds_right.csv'))
             
             print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
             
     print("Training complete!  Took: {}\n".format(format_time(time.time() - t)))
         
-    print("Saving model to {}...\n.".format(args.output_dir))
-    model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
-    model_to_save.save_pretrained(args.output_dir)
-    tokenizer.save_pretrained(args.output_dir)
+    #print("Saving model to {}...\n.".format(args.output_dir))
+    #model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
+    #model_to_save.save_pretrained(args.output_dir)
+    #tokenizer.save_pretrained(args.output_dir)
     return model
 
 
@@ -645,12 +646,10 @@ def main(args):
     print("\n========================================")
     print('               Processing data            ')
     print("========================================\n")
-    classes_of_interest = ['Command References',
-                            'Data Sheets',
+    classes_of_interest = ['Data Sheets',
                             'Configuration (Guides, Examples & TechNotes)',
                             'Install & Upgrade Guides',
                             'Release Notes',
-                            'Maintain & Operate (Guides & TechNotes)',
                             'End User Guides']
     df, categories = load_data(args, classes_of_interest)
     
@@ -674,25 +673,14 @@ def main(args):
         print("========================================\n")
         model = train(args, model, tokenizer, dataset, tb_writer, categories)
         
-        # Hard-coded evaluation after training (temporary because loading fine-tuned model gives weird results)
-        evaluate_bert_preds(args, model, tokenizer, categories)
-
+        ## Hard-coded evaluation after training (temporary because loading fine-tuned model gives weird results)
+        #evaluate_bert_preds(args, model, tokenizer, categories)
         
-    #elif args.do_eval and args.eval_filepath is not None:
-    #    print("\n========================================")
-    #    print('            Launching validation          ')
-    #    print("========================================\n")
-    #    result, df_wrong, df_right = evaluate(args, model, dataset, categories)
-    #    
-    #    # Save dataframes of wrong and right predictions for further analysis.
-    #    df_wrong.to_csv(os.path.join(args.output_dir, 'wrong_preds.csv'))
-    #    df_right.to_csv(os.path.join(args.output_dir, 'right_preds.csv'))
-    #
-    # NB: For unknown reason, saving the fine-tuned model, then loading it
-    # and running an evaluation on the same test file leads to accuracy of
-    # 0.17 while it was 0.88 after training. I suspect the BertForSequenceClassification
-    # model not to save properly all its parameters (maybe juste loading the weights of
-    # BERT and not the classifier MLP above).
+        # NB: For unknown reason, saving the fine-tuned model, then loading it
+        # and running an evaluation on the same test file leads to accuracy of
+        # 0.17 while it was 0.88 after training. I suspect the BertForSequenceClassification
+        # model not to save properly all its parameters (maybe juste loading the weights of
+        # BERT and not the classifier MLP above).
         
     
 if __name__=="__main__":
