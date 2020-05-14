@@ -2,7 +2,6 @@
 # Data
 #----------------
 _data/*
-extrinsic_evaluation/qa/UnsupervisedQA/data/*
 intrinsic_evaluation/data/*
 intrinsic_evaluation/exbert/server/data/dev/*
 
@@ -30,9 +29,8 @@ search/rfc/docker/_models/*
 #-------------------
 pretraining/-/bert_singleGPU/pretraining_output_fullfat/*
 pretraining/-/bert_singleGPU/pretraining_output_megafat/*
-extrinsic_evaluation/ner/output/*
 extrinsic_evaluation/classification/output/*
-
+extrinsic_evaluation/ner/output/*
 
 #----------------
 # Cache
@@ -44,7 +42,7 @@ _cache/*
 #-----------------
 # Tensorboard runs
 #------------------
-_runs/*
+#_runs/*
 #extrinsic_evaluation/ner/runs/*
 #extrinsic_evaluation/classification/runs/*
 #intrinsic_evaluation/runs/*
