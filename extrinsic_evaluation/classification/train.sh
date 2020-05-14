@@ -1,7 +1,9 @@
 #!/bin/bash
 
-export MODEL=bert_base_cased
-#export MODEL=netbert-final
+export CUDA_VISIBLE_DEVICES=0
+
+#export MODEL=bert_base_cased
+export MODEL=netbert-final
 
 export MODELS_PATH=/raid/antoloui/Master-thesis/_models/
 export TRAIN_FILE=/raid/antoloui/Master-thesis/_data/classification/cam_query_to_doctype.csv
@@ -18,4 +20,5 @@ python -W ignore -u train.py \
     --num_labels $LABELS \
     --num_epochs $EPOCHS \
     --batch_size $BATCHES \
-    --learning_rate $LR  #|& tee ./output/$MODEL/training_logs.txt
+    --learning_rate $LR \
+    --do_eval  #|& tee ./output/$MODEL/training_logs.txt
