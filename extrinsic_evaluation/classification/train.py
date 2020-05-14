@@ -309,7 +309,7 @@ def plot_confusion_matrix(cm, classes, outdir):
     plt.xlabel('Predicted labels', fontsize=12)
     plt.tight_layout()
     
-    plt.savefig(outdir+"confusion_matrix.png")
+    plt.savefig(outdir+"confusion_matrix.pdf")
     plt.close()
     return
 
@@ -481,12 +481,12 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             tb_writer.add_scalar('Test/F1 score', result['F1 score'], epoch_i + 1)
             tb_writer.add_scalar('Test/MCC', result['MCC'], epoch_i + 1)
             
-            ## Plot confusion matrix.
-            #plot_confusion_matrix(result['conf_matrix'], categories, args.output_dir)
+            # Plot confusion matrix.
+            plot_confusion_matrix(result['conf_matrix'], categories, args.output_dir)
             
-            ## Save dataframes of wrong and right predictions for further analysis.
-            #df_wrong.to_csv(os.path.join(args.output_dir, 'preds_wrong.csv'))
-            #df_right.to_csv(os.path.join(args.output_dir, 'preds_right.csv'))
+            # Save dataframes of wrong and right predictions for further analysis.
+            df_wrong.to_csv(os.path.join(args.output_dir, 'preds_wrong.csv'))
+            df_right.to_csv(os.path.join(args.output_dir, 'preds_right.csv'))
             
             print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
             
@@ -551,11 +551,11 @@ def evaluate(args, model, validation_dataset, categories):
     
     # Report results.
     result = compute_metrics(preds, out_label_ids, categories)
-    print("  * Accuracy: {0:.4f}".format(result['Accuracy']))
-    print("  * Recall: {0:.4f}".format(result['Recall']))
-    print("  * Precision: {0:.4f}".format(result['Precision']))
-    print("  * F1 score: {0:.4f}".format(result['F1 score']))
-    print("  * MCC: {0:.4f}".format(result['MCC']))
+    print("  * Accuracy: {0:.6f}".format(result['Accuracy']))
+    print("  * Recall: {0:.6f}".format(result['Recall']))
+    print("  * Precision: {0:.6f}".format(result['Precision']))
+    print("  * F1 score: {0:.6f}".format(result['F1 score']))
+    print("  * MCC: {0:.6f}".format(result['MCC']))
 
     # Get wrong and right predictions.
     df_wrong, df_right = analyze_predictions(preds, out_label_ids, validation_sentences)
@@ -673,8 +673,8 @@ def main(args):
         print("========================================\n")
         model = train(args, model, tokenizer, dataset, tb_writer, categories)
         
-        ## Hard-coded evaluation after training (temporary because loading fine-tuned model gives weird results)
-        #evaluate_bert_preds(args, model, tokenizer, categories)
+        # Hard-coded evaluation after training (temporary because loading fine-tuned model gives weird results)
+        evaluate_bert_preds(args, model, tokenizer, categories)
         
         # NB: For unknown reason, saving the fine-tuned model, then loading it
         # and running an evaluation on the same test file leads to accuracy of
