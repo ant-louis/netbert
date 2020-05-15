@@ -47,14 +47,13 @@ def parse_arguments():
                         type=str,
                         help="Path of the file containing the sentences to encode.",
     )
-    parser.add_argument("--do_eval",
+    parser.add_argument("--do_val",
                         action='store_true',
-                        help="Whether to evaluate the model.",
+                        help="Whether to do validation on the model during training.",
     )
-    parser.add_argument("--eval_filepath",
-                        default=None,
-                        type=str,
-                        help="Path of the file containing the sentences to encode.",
+    parser.add_argument("--do_test",
+                        action='store_true',
+                        help="Whether to do testing on the model during training.",
     )
     parser.add_argument("--output_dir",
                         default=None,
@@ -133,11 +132,8 @@ def load_data(args, interest_classes=None):
     if args.do_train and args.training_filepath is not None:
         print("Loading training data...")
         filepath = args.training_filepath
-    elif args.do_eval and args.eval_filepath is not None:
-        print("Loading validation data...")
-        filepath = args.eval_filepath
     else:
-        print("Error: Neither training or validation file provided with appropriate flag.")
+        print("Error: No training file provided with appropriate --do_train flag.")
         sys.exit()
     
     # Load the dataset into a pandas dataframe.
@@ -214,27 +210,30 @@ def create_masks(tokenized):
     return attention_masks
 
 
-def split_data(dataset, test_percent, seed):
+def split_data(args, dataset):
     """
     Split dataset to train/test.
     """
     tokenized, class_ids, attention_masks, sentences = dataset
     
-    if test_percent < 0.0 or test_percent > 1.0:
+    if args.test_percent < 0.0 or args.test_percent > 1.0:
         print("Error: '--test_percent' must be between [0,1].")
         sys.exit()
         
-    # Use 90% for training and 10% for validation.
-    train_inputs, val_inputs, train_labels, val_labels = train_test_split(tokenized, class_ids, 
-                                                                random_state=seed, test_size=test_percent)
-    # Do the same for the masks.
-    train_masks, val_masks, _, _ = train_test_split(attention_masks, class_ids,
-                                                 random_state=seed, test_size=test_percent)
-    # Do the same for the sentences.
-    train_sentences, val_sentences, _, _ = train_test_split(sentences, class_ids,
-                                                 random_state=seed, test_size=test_percent)
+    # Get train/test sets.
+    Train_inputs, test_inputs, Train_labels, test_labels = train_test_split(tokenized, class_ids, random_state=args.seed, test_size=args.test_percent)
+    Train_masks, test_masks, _, _ = train_test_split(attention_masks, class_ids, random_state=args.seed, test_size=args.test_percent)
+    Train_sentences, test_sentences, _, _ = train_test_split(sentences, class_ids, random_state=args.seed, test_size=args.test_percent)
     
-    return (train_inputs, train_labels, train_masks, train_sentences), (val_inputs, val_labels, val_masks, val_sentences)
+    # If validation during training, further split training set into train/val sets.
+    if args.do_val:
+        val_percent = args.test_percent/(1-args.test_percent)
+        train_inputs, val_inputs, train_labels, val_labels = train_test_split(Train_inputs, Train_labels, random_state=args.seed, test_size=val_percent)
+        train_masks, val_masks, _, _ = train_test_split(Train_masks, Train_labels, random_state=args.seed, test_size=val_percent)
+        train_sentences, val_sentences, _, _ = train_test_split(Train_sentences, Train_labels, random_state=args.seed, test_size=val_percent)
+        return (train_inputs, train_labels, train_masks, train_sentences), (val_inputs, val_labels, val_masks, val_sentences)
+
+    return (Train_inputs, Train_labels, Train_masks, Train_sentences), (test_inputs, test_labels, test_masks, test_sentences)
     
 
 def create_dataloader(dataset, batch_size, training_data=True):
@@ -360,11 +359,20 @@ def set_seed(seed):
 def train(args, model, tokenizer, dataset, tb_writer, categories):
     """
     """
-    if args.do_eval and args.eval_filepath is None:
-        print("No validation file given: splitting dataset to train/test datasets...\n")
-        train_dataset, validation_dataset = split_data(dataset, args.test_percent, args.seed)
+    if args.do_val and not args.do_test:
+        print("Splitting dataset to train/test/val sets...")
+        train_dataset, validation_dataset = split_data(args, dataset)
+        print("Samples in train set: {}".format(len(train_dataset[0])))
+        print("Samples in val set: {}\n".format(len(validation_dataset[0])))
+    elif args.do_test and not args.do_val:
+        print("Splitting dataset to train/test sets...")
+        train_dataset, test_dataset = split_data(args, dataset)
+        print("Samples in train set: {}".format(len(train_dataset[0])))
+        print("Samples in test set: {}\n".format(len(test_dataset[0])))
     else:
+        print("Taking full dataset for training...\n")
         train_dataset = dataset
+        print("Samples in train set: {}\n".format(len(train_dataset[0])))
     
     print("Creating training dataloader...\n")
     train_data, train_sampler, train_dataloader = create_dataloader(train_dataset, args.batch_size, training_data=True)
@@ -468,11 +476,26 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
 
         print("  Training epoch took: {:}\n".format(format_time(time.time() - t0)))
         
-        if args.do_eval and args.eval_filepath is None:
+        if args.do_val and not args.do_test:
             print("Running Validation...")
             # After the completion of each training epoch, measure our performance on our validation set.
             t0 = time.time()
             result, df_wrong, df_right = evaluate(args, model, validation_dataset, categories)
+            
+            # Write results to tensorboard.
+            tb_writer.add_scalar('Val/Accuracy', result['Accuracy'], epoch_i + 1)
+            tb_writer.add_scalar('Val/Recall', result['Recall'], epoch_i + 1)
+            tb_writer.add_scalar('Val/Precision', result['Precision'], epoch_i + 1)
+            tb_writer.add_scalar('Val/F1 score', result['F1 score'], epoch_i + 1)
+            tb_writer.add_scalar('Val/MCC', result['MCC'], epoch_i + 1)
+            
+            print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
+            
+        if args.do_test and not args.do_val:
+            print("Running Test...")
+            # After the completion of each training epoch, measure our performance on our final test set.
+            t0 = time.time()
+            result, df_wrong, df_right = evaluate(args, model, test_dataset, categories)
             
             # Write results to tensorboard.
             tb_writer.add_scalar('Test/Accuracy', result['Accuracy'], epoch_i + 1)
@@ -488,7 +511,7 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             df_wrong.to_csv(os.path.join(args.output_dir, 'preds_wrong.csv'))
             df_right.to_csv(os.path.join(args.output_dir, 'preds_right.csv'))
             
-            print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
+            print("  Testing took: {:}\n".format(format_time(time.time() - t0)))
             
     print("Training complete!  Took: {}\n".format(format_time(time.time() - t)))
         
@@ -674,7 +697,7 @@ def main(args):
         model = train(args, model, tokenizer, dataset, tb_writer, categories)
         
         # Hard-coded evaluation after training (temporary because loading fine-tuned model gives weird results)
-        evaluate_bert_preds(args, model, tokenizer, categories)
+        #evaluate_bert_preds(args, model, tokenizer, categories)
         
         # NB: For unknown reason, saving the fine-tuned model, then loading it
         # and running an evaluation on the same test file leads to accuracy of
