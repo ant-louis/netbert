@@ -263,22 +263,24 @@ def compute_metrics(preds, labels, classes):
     """
     # Create dict to store scores.
     result = dict()
+    result['Macro_Average'] = {}
+    result['Weighted_Average'] = {}
     
-    # Accuracy.
-    result['Accuracy'] = accuracy_score(y_true=labels, y_pred=preds)  #accuracy = (preds==labels).mean()
-    
-    # NB: Averaging methods:
+    # Averaging methods
+    #------------------
     #  - "macro" simply calculates the mean of the binary metrics, giving equal weight to each class.
     #  - "weighted" accounts for class imbalance by computing the average of binary metrics in which each class’s score is weighted by its presence in the true data sample.
     #  - "micro" gives each sample-class pair an equal contribution to the overall metric.
-    # Precision.
-    result['Precision'] = precision_score(y_true=labels, y_pred=preds, average='macro')
+    result['Macro_Average']['Precision'] = precision_score(y_true=labels, y_pred=preds, average='macro')
+    result['Macro_Average']['Recall'] = recall_score(y_true=labels, y_pred=preds, average='macro')
+    result['Macro_Average']['F1'] = f1_score(y_true=labels, y_pred=preds, average='macro')
     
-    # Recall.
-    result['Recall'] = recall_score(y_true=labels, y_pred=preds, average='macro')
+    result['Weighted_Average']['Precision'] = precision_score(y_true=labels, y_pred=preds, average='weighted')
+    result['Weighted_Average']['Recall'] = recall_score(y_true=labels, y_pred=preds, average='weighted')
+    result['Weighted_Average']['F1'] = f1_score(y_true=labels, y_pred=preds, average='weighted')
     
-    # F1 score.
-    result['F1 score'] = f1_score(y_true=labels, y_pred=preds, average='macro')
+    # Accuracy.
+    result['Accuracy'] = accuracy_score(y_true=labels, y_pred=preds)  #accuracy = (preds==labels).mean()
     
     # Matthews correlation coefficient (MCC): used for imbalanced classes.
     result['MCC'] = matthews_corrcoef(y_true=labels, y_pred=preds)
@@ -484,10 +486,16 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             
             # Write results to tensorboard.
             tb_writer.add_scalar('Val/Accuracy', result['Accuracy'], epoch_i + 1)
-            tb_writer.add_scalar('Val/Recall', result['Recall'], epoch_i + 1)
-            tb_writer.add_scalar('Val/Precision', result['Precision'], epoch_i + 1)
-            tb_writer.add_scalar('Val/F1 score', result['F1 score'], epoch_i + 1)
             tb_writer.add_scalar('Val/MCC', result['MCC'], epoch_i + 1)
+            
+            tb_writer.add_scalar('Val/MacroAvg/Recall', result['Macro_Average']['Recall'], epoch_i + 1)
+            tb_writer.add_scalar('Val/MacroAvg/Precision', result['Macro_Average']['Precision'], epoch_i + 1)
+            tb_writer.add_scalar('Val/MacroAvg/F1', result['Macro_Average']['F1'], epoch_i + 1)
+            
+            tb_writer.add_scalar('Val/WeightedAvg/Recall', result['Weighted_Average']['Recall'], epoch_i + 1)
+            tb_writer.add_scalar('Val/WeightedAvg/Precision', result['Weighted_Average']['Precision'], epoch_i + 1)
+            tb_writer.add_scalar('Val/WeightedAvg/F1', result['Weighted_Average']['F1'], epoch_i + 1)
+            
             
             print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
             
@@ -499,10 +507,15 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             
             # Write results to tensorboard.
             tb_writer.add_scalar('Test/Accuracy', result['Accuracy'], epoch_i + 1)
-            tb_writer.add_scalar('Test/Recall', result['Recall'], epoch_i + 1)
-            tb_writer.add_scalar('Test/Precision', result['Precision'], epoch_i + 1)
-            tb_writer.add_scalar('Test/F1 score', result['F1 score'], epoch_i + 1)
             tb_writer.add_scalar('Test/MCC', result['MCC'], epoch_i + 1)
+            
+            tb_writer.add_scalar('Test/MacroAvg/Recall', result['Macro_Average']['Recall'], epoch_i + 1)
+            tb_writer.add_scalar('Test/MacroAvg/Precision', result['Macro_Average']['Precision'], epoch_i + 1)
+            tb_writer.add_scalar('Test/MacroAvg/F1', result['Macro_Average']['F1'], epoch_i + 1)
+            
+            tb_writer.add_scalar('Test/WeightedAvg/Recall', result['Weighted_Average']['Recall'], epoch_i + 1)
+            tb_writer.add_scalar('Testl/WeightedAvg/Precision', result['Weighted_Average']['Precision'], epoch_i + 1)
+            tb_writer.add_scalar('Test/WeightedAvg/F1', result['Weighted_Average']['F1'], epoch_i + 1)
             
             # Plot confusion matrix.
             plot_confusion_matrix(result['conf_matrix'], categories, args.output_dir)
@@ -515,10 +528,10 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             
     print("Training complete!  Took: {}\n".format(format_time(time.time() - t)))
         
-    #print("Saving model to {}...\n.".format(args.output_dir))
-    #model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
-    #model_to_save.save_pretrained(args.output_dir)
-    #tokenizer.save_pretrained(args.output_dir)
+    print("Saving model to {}...\n.".format(args.output_dir))
+    model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
+    model_to_save.save_pretrained(args.output_dir)
+    tokenizer.save_pretrained(args.output_dir)
     return model
 
 
@@ -575,11 +588,18 @@ def evaluate(args, model, validation_dataset, categories):
     # Report results.
     result = compute_metrics(preds, out_label_ids, categories)
     print("  * Accuracy: {0:.6f}".format(result['Accuracy']))
-    print("  * Recall: {0:.6f}".format(result['Recall']))
-    print("  * Precision: {0:.6f}".format(result['Precision']))
-    print("  * F1 score: {0:.6f}".format(result['F1 score']))
     print("  * MCC: {0:.6f}".format(result['MCC']))
-
+    
+    print("  Macro Average")
+    print("  * Recall: {0:.6f}".format(result['Macro_Average']['Recall']))
+    print("  * Precision: {0:.6f}".format(result['Macro_Average']['Precision']))
+    print("  * F1 score: {0:.6f}".format(result['Macro_Average']['F1']))
+    
+    print("  Weighted Average")
+    print("  * Recall: {0:.6f}".format(result['Weighted_Average']['Recall']))
+    print("  * Precision: {0:.6f}".format(result['Weighted_Average']['Precision']))
+    print("  * F1 score: {0:.6f}".format(result['Weighted_Average']['F1']))
+    
     # Get wrong and right predictions.
     df_wrong, df_right = analyze_predictions(preds, out_label_ids, validation_sentences)
     
