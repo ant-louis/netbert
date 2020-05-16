@@ -2,8 +2,8 @@
 
 export CUDA_VISIBLE_DEVICES=0
 
-export MODEL=bert_base_cased
-#export MODEL=netbert-final
+#export MODEL=bert_base_cased
+export MODEL=netbert-final
 
 export MODELS_PATH=/raid/antoloui/Master-thesis/_models/
 export TRAIN_FILE=/raid/antoloui/Master-thesis/_data/classification/cam_query_to_doctype.csv
