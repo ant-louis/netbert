@@ -717,7 +717,7 @@ def main(args):
         model = train(args, model, tokenizer, dataset, tb_writer, categories)
         
         # Hard-coded evaluation after training (temporary because loading fine-tuned model gives weird results)
-        #evaluate_bert_preds(args, model, tokenizer, categories)
+        evaluate_bert_preds(args, model, tokenizer, categories)
         
         # NB: For unknown reason, saving the fine-tuned model, then loading it
         # and running an evaluation on the same test file leads to accuracy of
