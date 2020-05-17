@@ -514,7 +514,7 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             tb_writer.add_scalar('Test/MacroAvg/F1', result['Macro_Average']['F1'], epoch_i + 1)
             
             tb_writer.add_scalar('Test/WeightedAvg/Recall', result['Weighted_Average']['Recall'], epoch_i + 1)
-            tb_writer.add_scalar('Testl/WeightedAvg/Precision', result['Weighted_Average']['Precision'], epoch_i + 1)
+            tb_writer.add_scalar('Test/WeightedAvg/Precision', result['Weighted_Average']['Precision'], epoch_i + 1)
             tb_writer.add_scalar('Test/WeightedAvg/F1', result['Weighted_Average']['F1'], epoch_i + 1)
             
             # Plot confusion matrix.
