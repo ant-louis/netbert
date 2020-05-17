@@ -300,7 +300,7 @@ def plot_confusion_matrix(cm, classes, outdir):
     df_cm = pd.DataFrame(cm, index=classes, columns=classes)
     
     plt.figure(figsize = (10,7))
-    ax = sn.heatmap(df_cm, annot=True)
+    ax = sn.heatmap(df_cm, annot=True, cmap='coolwarm')
     
     ax.set_xticklabels(ax.get_xticklabels(), fontsize=8, horizontalalignment='right', rotation=45) 
     ax.set_yticklabels(ax.get_yticklabels(), fontsize=8)
@@ -495,8 +495,6 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             tb_writer.add_scalar('Val/WeightedAvg/Recall', result['Weighted_Average']['Recall'], epoch_i + 1)
             tb_writer.add_scalar('Val/WeightedAvg/Precision', result['Weighted_Average']['Precision'], epoch_i + 1)
             tb_writer.add_scalar('Val/WeightedAvg/F1', result['Weighted_Average']['F1'], epoch_i + 1)
-            
-            
             print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
             
         if args.do_test and not args.do_val:
@@ -523,6 +521,10 @@ def train(args, model, tokenizer, dataset, tb_writer, categories):
             # Save dataframes of wrong and right predictions for further analysis.
             df_wrong.to_csv(os.path.join(args.output_dir, 'preds_wrong.csv'))
             df_right.to_csv(os.path.join(args.output_dir, 'preds_right.csv'))
+            
+            # Save results as json dictionary.
+            with open(os.path.join(args.output_dir, 'test_scores.json'), 'w+') as f:
+                json.dump(result, f)
             
             print("  Testing took: {:}\n".format(format_time(time.time() - t0)))
             
@@ -619,7 +621,7 @@ def evaluate_bert_preds(args, model, tokenizer, categories):
     result, df_wrong, df_right = evaluate(args, model, bert_right_preds_dataset, categories)
     df_wrong.to_csv(os.path.join(args.output_dir, 'bert_right_netbert_wrong.csv'))
     df_right.to_csv(os.path.join(args.output_dir, 'bert_right_netbert_right.csv'))
-    with open(os.path.join(args.output_dir, 'scores_bert_right_preds.json'), 'w') as f:
+    with open(os.path.join(args.output_dir, 'scores_bert_right_preds.json'), 'w+') as f:
         json.dump(result, f)
         
     # Load queries that Bert-base classified wrongly.
@@ -631,7 +633,7 @@ def evaluate_bert_preds(args, model, tokenizer, categories):
     result, df_wrong, df_right = evaluate(args, model, bert_wrong_preds_dataset, categories)
     df_wrong.to_csv(os.path.join(args.output_dir, 'bert_wrong_netbert_wrong.csv'))
     df_right.to_csv(os.path.join(args.output_dir, 'bert_wrong_netbert_right.csv'))
-    with open(os.path.join(args.output_dir, 'scores_bert_wrong_preds.json'), 'w') as f:
+    with open(os.path.join(args.output_dir, 'scores_bert_wrong_preds.json'), 'w+') as f:
         json.dump(result, f)
     return
 
