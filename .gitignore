@@ -29,7 +29,7 @@ search/rfc/docker/_models/*
 #-------------------
 pretraining/-/bert_singleGPU/pretraining_output_fullfat/*
 pretraining/-/bert_singleGPU/pretraining_output_megafat/*
-extrinsic_evaluation/classification/output/*
+extrinsic_evaluation/text_classification/output/*
 extrinsic_evaluation/ner/output/*
 
 #----------------
@@ -44,5 +44,5 @@ _cache/*
 #------------------
 #_runs/*
 #extrinsic_evaluation/ner/runs/*
-#extrinsic_evaluation/classification/runs/*
+#extrinsic_evaluation/text_classification/runs/*
 #intrinsic_evaluation/runs/*
