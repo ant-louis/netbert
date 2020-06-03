@@ -2,8 +2,8 @@
 # Data
 #----------------
 _data/*
-intrinsic_evaluation/data/*
-intrinsic_evaluation/exbert/server/data/dev/*
+*.csv
+experiments/intrinsic/exbert/server/data/dev/*
 
 #----------------
 # Weird stuff
@@ -29,8 +29,8 @@ search/rfc/docker/_models/*
 #-------------------
 pretraining/-/bert_singleGPU/pretraining_output_fullfat/*
 pretraining/-/bert_singleGPU/pretraining_output_megafat/*
-extrinsic_evaluation/text_classification/output/*
-extrinsic_evaluation/ner/output/*
+experiments/text_classification/output/*
+experiments/named_entity_recognition/output/*
 
 #----------------
 # Cache
@@ -43,6 +43,5 @@ _cache/*
 # Tensorboard runs
 #------------------
 #_runs/*
-#extrinsic_evaluation/ner/runs/*
-#extrinsic_evaluation/text_classification/runs/*
-#intrinsic_evaluation/runs/*
+#experiments/named_entity_recognition/runs/*
+#experiments/text_classification/runs/*
