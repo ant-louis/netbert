@@ -5,7 +5,7 @@ export OUT_DIR=./output/base_cased/
 export DEV_FILE=/raid/antoloui/Master-thesis/Data/Cleaned/dev.raw
 export CACHE=../_cache
 
-python tools/run_language_modeling.py \
+python pretrain.py \
     --model_type=bert \
     --model_name_or_path=bert-base-cased \
     --do_train \
