@@ -6,8 +6,6 @@ import datetime
 import random
 import os
 import itertools
-import statistics
-from tqdm import tqdm
 
 import pandas as pd
 import numpy as np
@@ -45,18 +43,18 @@ def parse_arguments():
                         action='store_true',
                         help="Whether to launch training.",
     )
+    parser.add_argument("--training_filepath",
+                        default=None,
+                        type=str,
+                        help="Path of the file containing the sentences to encode.",
+    )
     parser.add_argument("--do_val",
                         action='store_true',
                         help="Whether to do validation on the model during training.",
     )
     parser.add_argument("--do_test",
                         action='store_true',
-                        help="Whether to do testing on the model after training.",
-    )
-    parser.add_argument("--filepath",
-                        default=None,
-                        type=str,
-                        help="Path of the file containing the sentences to encode.",
+                        help="Whether to do testing on the model during training.",
     )
     parser.add_argument("--output_dir",
                         default=None,
@@ -89,7 +87,7 @@ def parse_arguments():
                         help="Total batch size. For fine-tuning BERT on a specific task, the authors recommend a batch size of 16 or 32 per GPU/CPU.",
     )
     parser.add_argument("--num_epochs",
-                        default=6,
+                        default=4,
                         type=int,
                         help="Total number of training epochs to perform. Authors recommend 2,3 or 4.",
     )
@@ -117,33 +115,8 @@ def parse_arguments():
                         action='store_true',
                         help="Should the training dataset be balanced or not.",
     )
-    parser.add_argument("--do_compare",
-                        action='store_true',
-                        help="Whether to evaluate the model on BERT predictions (BERT must have been tested before).",
-    )
     arguments, _ = parser.parse_known_args()
     return arguments
-
-
-def format_time(elapsed):
-    """
-    Takes a time in seconds and returns a string hh:mm:ss
-    """
-    # Round to the nearest second.
-    elapsed_rounded = int(round((elapsed)))
-    
-    # Format as hh:mm:ss
-    return str(datetime.timedelta(seconds=elapsed_rounded))
-
-
-def set_seed(seed):
-    """
-    Set seed.
-    """
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
 
 
 def load_data(args, interest_classes=None):
@@ -157,10 +130,11 @@ def load_data(args, interest_classes=None):
     - The csv file must have a header;
     - The first column is the index column;
     """
-    if args.filepath is not None:
-        filepath = args.filepath
+    if args.training_filepath is not None:
+        print("Loading training data...")
+        filepath = args.training_filepath
     else:
-        print("Error: No data file provided.")
+        print("Error: No training file provided with appropriate --do_train flag.")
         sys.exit()
     
     # Load the dataset into a pandas dataframe.
@@ -216,10 +190,11 @@ def tokenize_sentences(tokenizer, df):
     max_len = max(lengths) if max(lengths) <= 512 else 512
     
     # Pad and truncate our sequences so that they all have the same length, max_len.
-    print('  - Max sentence length: {}'.format(max_len))
-    print('  - Padding/truncating all sentences to {} tokens...'.format(max_len))
+    print('Max sentence length: {}'.format(max_len))
+    print('-> Padding/truncating all sentences to {} tokens...'.format(max_len))
     tokenized = pad_sequences(tokenized, maxlen=max_len, dtype="long", 
-                              value=0, truncating="post", padding="post") # "post" indicates that we want to pad and truncate at the end of the sequence.
+                              value=0, truncating="post", padding="post") # "post" indicates that we want to pad and truncate at the end of the sequence, as opposed to the beginning.
+    
     return tokenized
 
 
@@ -238,41 +213,28 @@ def create_masks(tokenized):
 
 def split_data(args, dataset):
     """
-    Split dataset to train/val/test sets.
+    Split dataset to train/test.
     """
     tokenized, class_ids, attention_masks, sentences = dataset
+    
     if args.test_percent < 0.0 or args.test_percent > 1.0:
         print("Error: '--test_percent' must be between [0,1].")
         sys.exit()
         
-    # Split in train/test sets.
+    # Get train/test sets.
     Train_inputs, test_inputs, Train_labels, test_labels = train_test_split(tokenized, class_ids, random_state=args.seed, test_size=args.test_percent)
     Train_masks, test_masks, _, _ = train_test_split(attention_masks, class_ids, random_state=args.seed, test_size=args.test_percent)
     Train_sentences, test_sentences, _, _ = train_test_split(sentences, class_ids, random_state=args.seed, test_size=args.test_percent)
     
-    # Further split train set to train/val sets.
-    val_percent = args.test_percent/(1-args.test_percent)
-    train_inputs, val_inputs, train_labels, val_labels = train_test_split(Train_inputs, Train_labels, random_state=args.seed, test_size=val_percent)
-    train_masks, val_masks, _, _ = train_test_split(Train_masks, Train_labels, random_state=args.seed, test_size=val_percent)
-    train_sentences, val_sentences, _, _ = train_test_split(Train_sentences, Train_labels, random_state=args.seed, test_size=val_percent)
-    return (train_inputs, train_labels, train_masks, train_sentences), (val_inputs, val_labels, val_masks, val_sentences), (test_inputs, test_labels, test_masks, test_sentences)
+    # If validation during training, further split training set into train/val sets.
+    if args.do_val:
+        val_percent = args.test_percent/(1-args.test_percent)
+        train_inputs, val_inputs, train_labels, val_labels = train_test_split(Train_inputs, Train_labels, random_state=args.seed, test_size=val_percent)
+        train_masks, val_masks, _, _ = train_test_split(Train_masks, Train_labels, random_state=args.seed, test_size=val_percent)
+        train_sentences, val_sentences, _, _ = train_test_split(Train_sentences, Train_labels, random_state=args.seed, test_size=val_percent)
+        return (train_inputs, train_labels, train_masks, train_sentences), (val_inputs, val_labels, val_masks, val_sentences)
 
-
-def combine_datasets(train_set, val_set):
-    """
-    Combine two datasets in one.
-    """
-    # Extract individual arrays.
-    train_inputs, train_labels, train_masks, train_sentences = train_set
-    val_inputs, val_labels, val_masks, val_sentences = val_set
-    
-    # Combine respective arrays.
-    combined_inputs = train_inputs + val_inputs
-    combined_labels = train_labels + val_labels
-    combined_masks = train_masks + val_masks
-    combined_sentences = train_sentences + val_sentences
-    combined_set = (combined_inputs, combined_labels, combined_masks, combined_sentences)
-    return combined_set
+    return (Train_inputs, Train_labels, Train_masks, Train_sentences), (test_inputs, test_labels, test_masks, test_sentences)
     
 
 def create_dataloader(dataset, batch_size, training_data=True):
@@ -292,6 +254,7 @@ def create_dataloader(dataset, batch_size, training_data=True):
     else:
         sampler = SequentialSampler(data)                                               
     dataloader = DataLoader(data, sampler=sampler, batch_size=batch_size)
+    
     return data, sampler, dataloader
 
 
@@ -373,44 +336,86 @@ def analyze_predictions(preds, labels, sentences):
     df_right = pd.DataFrame(list(zip(sentences_right, labels_right, preds_right)),
                             columns =['Sentence', 'Class_id', 'Prediction_id'])
     return df_wrong, df_right
+    
 
+def format_time(elapsed):
+    """
+    Takes a time in seconds and returns a string hh:mm:ss
+    """
+    # Round to the nearest second.
+    elapsed_rounded = int(round((elapsed)))
+    
+    # Format as hh:mm:ss
+    return str(datetime.timedelta(seconds=elapsed_rounded))
+
+
+def set_seed(seed):
+    """
+    Set seed.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
     
     
-def train(args, model, tokenizer, categories, train_set, val_set):
+def train(args, model, tokenizer, dataset, categories):
     """
     """
-    tb_writer = SummaryWriter() # Create tensorboard summarywriter.
+    # Create tensorboard summarywriter.
+    tb_writer = SummaryWriter()
     
-    if not args.do_val:
-        print("Training on train/val sets combined...")
-        train_set = combine(train_set, val_set)
-        print("  - Total samples: {}".format(len(train_set[0])))
+    if args.do_val and not args.do_test:
+        print("Splitting dataset to train/test/val sets...")
+        train_dataset, validation_dataset = split_data(args, dataset)
+        print("Samples in train set: {}".format(len(train_dataset[0])))
+        print("Samples in val set: {}\n".format(len(validation_dataset[0])))
+    elif args.do_test and not args.do_val:
+        print("Splitting dataset to train/test sets...")
+        train_dataset, test_dataset = split_data(args, dataset)
+        print("Samples in train set: {}".format(len(train_dataset[0])))
+        print("Samples in test set: {}\n".format(len(test_dataset[0])))
     else:
-        print("Training on train set...")
-        print("  - Total samples: {}".format(len(train_set[0])))
-        
-        
-    # Creating training dataloader.
-    train_data, train_sampler, train_dataloader = create_dataloader(train_set, args.batch_size, training_data=True)
+        print("Taking full dataset for training...\n")
+        train_dataset = dataset
+        print("Samples in train set: {}\n".format(len(train_dataset[0])))
+    
+    print("Creating training dataloader...\n")
+    train_data, train_sampler, train_dataloader = create_dataloader(train_dataset, args.batch_size, training_data=True)
                                                        
     # Setting up Optimizer & Learning Rate Scheduler.
-    optimizer = AdamW(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
+    optimizer = AdamW(model.parameters(),
+                  lr = args.learning_rate,
+                  eps = args.adam_epsilon
+                )
     total_steps = len(train_dataloader) * args.num_epochs
-    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
-    
+    scheduler = get_linear_schedule_with_warmup(optimizer, 
+                                                num_warmup_steps = 0, # Default value in run_glue.py
+                                                num_training_steps = total_steps)
+    # Init some useful variables.
     global_step = 0
     tr_loss, logging_loss = 0.0, 0.0
+
+    # For each epoch...
     t = time.time()
     for epoch_i in range(0, args.num_epochs):
-        print('\n======== Epoch {:} / {:} ========'.format(epoch_i + 1, args.num_epochs))
+        
+        # Perform one full pass over the training set.
+        print('======== Epoch {:} / {:} ========'.format(epoch_i + 1, args.num_epochs))
+        print('Training...')
+
         # Measure how long the training epoch takes.
         t0 = time.time()
-        
-        # Put the model into training mode.
+
+        # Put the model into training mode. Don't be mislead--the call to 
+        # `train` just changes the *mode*, it doesn't *perform* the training.
+        # `dropout` and `batchnorm` layers behave differently during training
+        # vs. test (source: https://stackoverflow.com/questions/51433378/what-does-model-train-do-in-pytorch)
         model.train()
 
         # For each batch of training data...
         for step, batch in enumerate(train_dataloader):
+
             # Unpack this training batch from our dataloader. 
             # As we unpack the batch, we'll also copy each tensor to the GPU using the `to` method.
             # `batch` contains three pytorch tensors:
@@ -422,18 +427,27 @@ def train(args, model, tokenizer, categories, train_set, val_set):
             b_labels = batch[2].to(args.device)
 
             # Always clear any previously calculated gradients before performing a backward pass. 
+            # PyTorch doesn't do this automatically because accumulating the gradients is "convenient while training RNNs". 
+            # (source: https://stackoverflow.com/questions/48001598/why-do-we-need-to-call-zero-grad-in-pytorch)
             model.zero_grad()        
 
-            # Perform a forward pass. This will return the loss (rather than the model output) because we have provided the `labels`.
+            # Perform a forward pass (evaluate the model on this training batch).
+            # This will return the loss (rather than the model output) because we have provided the `labels`.
+            # The documentation for this `model` function is here: 
+            # https://huggingface.co/transformers/v2.2.0/model_doc/bert.html#transformers.BertForSequenceClassification
             outputs = model(b_input_ids, 
                         token_type_ids=None, 
                         attention_mask=b_input_mask, 
                         labels=b_labels)
-            loss = outputs[0] # The call to `model` always returns a tuple, so we need to pull the loss value out of the tuple. Note that `loss` is a Tensor containing a single value.
+
+            # The call to `model` always returns a tuple, so we need to pull the loss value out of the tuple.
+            loss = outputs[0]
+            
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel training
 
-            # Accumulate the training loss over all of the batches so that we can calculate the average loss at the end. The `.item()` function just returns the Python value from the tensor.
+            # Accumulate the training loss over all of the batches so that we can calculate the average loss at the end. 
+            # `loss` is a Tensor containing a single value; the `.item()` function just returns the Python value from the tensor.
             tr_loss += loss.item()
 
             # Perform a backward pass to calculate the gradients.
@@ -443,6 +457,7 @@ def train(args, model, tokenizer, categories, train_set, val_set):
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
             # Update parameters and take a step using the computed gradient.
+            # The optimizer dictates the "update rule"--how the parameters are modified based on their gradients, the learning rate, etc.
             optimizer.step()
 
             # Update the learning rate.
@@ -453,6 +468,7 @@ def train(args, model, tokenizer, categories, train_set, val_set):
             
             # Progress update every 'logging_steps' batches.
             if args.logging_steps > 0 and step != 0 and step % args.logging_steps == 0:
+                
                 # Calculate elapsed time in minutes.
                 elapsed = format_time(time.time() - t0)
                 
@@ -460,68 +476,99 @@ def train(args, model, tokenizer, categories, train_set, val_set):
                 loss_scalar = (tr_loss - logging_loss) / args.logging_steps
                 tb_writer.add_scalar('Train/Loss', loss_scalar, global_step)
                 logging_loss = tr_loss
+                
+                # Print the log.
                 print('  Batch {:>5,}  of  {:>5,}.    Elapsed: {:}.    Training loss: {:.2f}'.format(step, len(train_dataloader), elapsed, loss_scalar))
 
         print("  Training epoch took: {:}\n".format(format_time(time.time() - t0)))
         
-        if args.do_val:
-            print("Running validation on val set...")
+        if args.do_val and not args.do_test:
+            print("Running Validation...")
+            # After the completion of each training epoch, measure our performance on our validation set.
             t0 = time.time()
-            result, df_wrong, df_right = evaluate(args, model, categories, val_set)
+            result, df_wrong, df_right = evaluate(args, model, validation_dataset, categories)
             
             # Write results to tensorboard.
             tb_writer.add_scalar('Val/Accuracy', result['Accuracy'], epoch_i + 1)
             tb_writer.add_scalar('Val/MCC', result['MCC'], epoch_i + 1)
+            
             tb_writer.add_scalar('Val/MacroAvg/Recall', result['Macro_Average']['Recall'], epoch_i + 1)
             tb_writer.add_scalar('Val/MacroAvg/Precision', result['Macro_Average']['Precision'], epoch_i + 1)
             tb_writer.add_scalar('Val/MacroAvg/F1', result['Macro_Average']['F1'], epoch_i + 1)
+            
             tb_writer.add_scalar('Val/WeightedAvg/Recall', result['Weighted_Average']['Recall'], epoch_i + 1)
             tb_writer.add_scalar('Val/WeightedAvg/Precision', result['Weighted_Average']['Precision'], epoch_i + 1)
             tb_writer.add_scalar('Val/WeightedAvg/F1', result['Weighted_Average']['F1'], epoch_i + 1)
-            
-            # Print results.
-            print("  * Accuracy: {0:.6f}".format(result['Accuracy']))
-            print("  * MCC: {0:.6f}".format(result['MCC']))
-            print("  Macro Average")
-            print("  * Recall: {0:.6f}".format(result['Macro_Average']['Recall']))
-            print("  * Precision: {0:.6f}".format(result['Macro_Average']['Precision']))
-            print("  * F1 score: {0:.6f}".format(result['Macro_Average']['F1']))
-            print("  Weighted Average")
-            print("  * Recall: {0:.6f}".format(result['Weighted_Average']['Recall']))
-            print("  * Precision: {0:.6f}".format(result['Weighted_Average']['Precision']))
-            print("  * F1 score: {0:.6f}".format(result['Weighted_Average']['F1']))
             print("  Validation took: {:}\n".format(format_time(time.time() - t0)))
-                 
+            
+        if args.do_test and not args.do_val:
+            print("Running Test...")
+            # After the completion of each training epoch, measure our performance on our final test set.
+            t0 = time.time()
+            result, df_wrong, df_right = evaluate(args, model, test_dataset, categories)
+            
+            # Write results to tensorboard.
+            tb_writer.add_scalar('Test/Accuracy', result['Accuracy'], epoch_i + 1)
+            tb_writer.add_scalar('Test/MCC', result['MCC'], epoch_i + 1)
+            
+            tb_writer.add_scalar('Test/MacroAvg/Recall', result['Macro_Average']['Recall'], epoch_i + 1)
+            tb_writer.add_scalar('Test/MacroAvg/Precision', result['Macro_Average']['Precision'], epoch_i + 1)
+            tb_writer.add_scalar('Test/MacroAvg/F1', result['Macro_Average']['F1'], epoch_i + 1)
+            
+            tb_writer.add_scalar('Test/WeightedAvg/Recall', result['Weighted_Average']['Recall'], epoch_i + 1)
+            tb_writer.add_scalar('Test/WeightedAvg/Precision', result['Weighted_Average']['Precision'], epoch_i + 1)
+            tb_writer.add_scalar('Test/WeightedAvg/F1', result['Weighted_Average']['F1'], epoch_i + 1)
+            
+            # Plot confusion matrix.
+            plot_confusion_matrix(result['conf_matrix'], categories, args.output_dir)
+            
+            # Save dataframes of wrong and right predictions for further analysis.
+            df_wrong.to_csv(os.path.join(args.output_dir, 'preds_wrong.csv'))
+            df_right.to_csv(os.path.join(args.output_dir, 'preds_right.csv'))
+            
+            # Save results as json dictionary.
+            with open(os.path.join(args.output_dir, 'test_scores.json'), 'w+') as f:
+                json.dump(result, f)
+            
+            print("  Testing took: {:}\n".format(format_time(time.time() - t0)))
+            
     print("Training complete!  Took: {}\n".format(format_time(time.time() - t)))
         
     print("Saving model to {}...\n.".format(args.output_dir))
     model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
     model_to_save.save_pretrained(args.output_dir)
     tokenizer.save_pretrained(args.output_dir)
-    return
+    return model
 
 
-def evaluate(args, model, categories, evaluation_set):
+def evaluate(args, model, validation_dataset, categories):
     """
     """    
-    # Creating evaluation dataloader.
-    evaluation_data, evaluation_sampler, evaluation_dataloader = create_dataloader(evaluation_set, args.batch_size, training_data=False)
-    evaluation_sentences = evaluation_set[3]
+    #Creating validation dataloader.
+    validation_data, validation_sampler, validation_dataloader = create_dataloader(validation_dataset, args.batch_size, training_data=False)
     
-    # Put the model in evaluation mode.
-    model.eval()
-
+    # Get validation sentences.
+    validation_sentences = validation_dataset[3]
+    
+    # Tracking variables
     nb_eval_steps = 0
     preds = None
     out_label_ids = None
-    for batch in evaluation_dataloader:
+    
+    # Put the model in evaluation mode--the dropout layers behave differently during evaluation.
+    model.eval()
+
+    # Evaluate data for one epoch
+    for batch in validation_dataloader:
 
         # Add batch to GPU.
         b_input_ids, b_input_mask, b_labels = tuple(t.to(args.device) for t in batch)
 
-        # Telling the model not to compute or store gradients (saving memory and speeding up evaluation).
+        # Telling the model not to compute or store gradients, saving memory and speeding up validation
         with torch.no_grad():        
-            # Forward pass, calculate logit predictions. This will return the logits rather than the loss because we have not provided labels.
+
+            # Forward pass, calculate logit predictions.
+            # This will return the logits rather than the loss because we have not provided labels.
             # token_type_ids is the same as the "segment ids", which differentiates sentence 1 and 2 in 2-sentence tasks.
             outputs = model(b_input_ids, 
                             token_type_ids=None, 
@@ -544,94 +591,25 @@ def evaluate(args, model, categories, evaluation_set):
     # Take the max predicitions.
     preds = np.argmax(preds, axis=1)
     
-    # Compute performance.
+    # Report results.
     result = compute_metrics(preds, out_label_ids, categories)
+    print("  * Accuracy: {0:.6f}".format(result['Accuracy']))
+    print("  * MCC: {0:.6f}".format(result['MCC']))
+    
+    print("  Macro Average")
+    print("  * Recall: {0:.6f}".format(result['Macro_Average']['Recall']))
+    print("  * Precision: {0:.6f}".format(result['Macro_Average']['Precision']))
+    print("  * F1 score: {0:.6f}".format(result['Macro_Average']['F1']))
+    
+    print("  Weighted Average")
+    print("  * Recall: {0:.6f}".format(result['Weighted_Average']['Recall']))
+    print("  * Precision: {0:.6f}".format(result['Weighted_Average']['Precision']))
+    print("  * F1 score: {0:.6f}".format(result['Weighted_Average']['F1']))
     
     # Get wrong and right predictions.
-    df_wrong, df_right = analyze_predictions(preds, out_label_ids, evaluation_sentences)
+    df_wrong, df_right = analyze_predictions(preds, out_label_ids, validation_sentences)
     
     return result, df_wrong, df_right
-
-
-def create_bootstrap_sample(dataset):
-    """
-    """
-    # Extract lists.
-    tokenized, class_ids, attention_masks, sentences = dataset
-            
-    # Get a sample.
-    sample_tokenized, sample_class_ids, sample_attention_masks, sample_sentences = resample(tokenized,
-                                                                                            class_ids,
-                                                                                            attention_masks,
-                                                                                            sentences,
-                                                                                            replace=True)
-    # Concat in tuple.
-    bootstrapped_sample = (sample_tokenized, sample_class_ids, sample_attention_masks, sample_sentences)
-    return bootstrapped_sample
-
-
-def bootstrap_evaluation(args, model, categories, test_set, iters):
-    """
-    """
-    macro_recalls = []
-    macro_precisions = []
-    macro_f1s = []
-    weighted_recalls = []
-    weighted_precisions = []
-    weighted_f1s = []
-    mccs = []
-    accuracies = []
-    
-    # Run bootstrapping.
-    for i in tqdm(range(iters)):
-        # Create bootstrap sample from test set.
-        bootstrap_sample = create_bootstrap_sample(test_set)
-        
-        # Evaluate on sample.
-        result, _, _ = evaluate(args, model, categories, bootstrap_sample)
-        
-        # Extract results.
-        macro_recalls.append(result['Macro_Average']['Recall'])
-        macro_precisions.append(result['Macro_Average']['Precision'])
-        macro_f1s.append(result['Macro_Average']['F1'])
-        weighted_recalls.append(result['Weighted_Average']['Recall'])
-        weighted_precisions.append(result['Weighted_Average']['Precision'])
-        weighted_f1s.append(result['Weighted_Average']['F1'])
-        mccs.append(result['MCC'])
-        accuracies.append(result['Accuracy'])
-        
-    # Create dictionary to save statistics on metrics.
-    stats = dict()
-    stats['macro-recall'] = {}
-    stats['macro-precision'] = {}
-    stats['macro-f1'] = {}
-    stats['weighted-recall'] = {}
-    stats['weighted-precision'] = {}
-    stats['weighted-f1'] = {}
-    stats['mcc'] = {}
-    stats['accuracy'] = {}
-    
-    # Compute stats.
-    stats['macro-recall']['mean'] = statistics.mean(macro_recalls)
-    stats['macro-recall']['var'] = statistics.variance(macro_recalls)
-    stats['macro-precision']['mean'] = statistics.mean(macro_precisions)
-    stats['macro-precision']['var'] = statistics.variance(macro_precisions)
-    stats['macro-f1']['mean'] = statistics.mean(macro_f1s)
-    stats['macro-f1']['var'] = statistics.variance(macro_f1s)
-    
-    stats['weighted-recall']['mean'] = statistics.mean(weighted_recalls)
-    stats['weighted-recall']['var'] = statistics.variance(weighted_recalls)
-    stats['weighted-precision']['mean'] = statistics.mean(weighted_precisions)
-    stats['weighted-precision']['var'] = statistics.variance(weighted_precisions)
-    stats['weighted-f1']['mean'] = statistics.mean(weighted_f1s)
-    stats['weighted-f1']['var'] = statistics.variance(weighted_f1s)
-    
-    stats['mcc']['mean'] = statistics.mean(mccs)
-    stats['mcc']['var'] = statistics.variance(mccs)
-    stats['accuracy']['mean'] = statistics.mean(accuracies)
-    stats['accuracy']['var'] = statistics.variance(accuracies)
-    
-    return stats
 
 
 def evaluate_bert_preds(args, model, tokenizer, categories):
@@ -676,8 +654,8 @@ def main(args):
     
     print("\n========================================")
     print('                  MODEL                   ')
-    print("========================================")
-    print("Loading BertForSequenceClassification model...")
+    print("========================================\n")
+    print("Loading BertForSequenceClassification model...\n")
     model = BertForSequenceClassification.from_pretrained(
         args.model_name_or_path, # Use the 12-layer BERT model, with a cased vocab.
         num_labels = args.num_labels, # The number of output labels
@@ -685,7 +663,7 @@ def main(args):
         output_hidden_states = False, # Whether the model returns all hidden-states.
         cache_dir = args.cache_dir,
     )
-    print('Loading BertTokenizer...')
+    print('Loading BertTokenizer...\n')
     tokenizer = BertTokenizer.from_pretrained(args.model_name_or_path, do_lower_case=False)
     
     print("Setting up CUDA & GPU...")
@@ -693,19 +671,19 @@ def main(args):
         if args.gpu_id is not None:
             torch.cuda.set_device(args.gpu_id)
             args.n_gpu = 1
-            print("  - GPU {} {} will be used.".format(torch.cuda.get_device_name(args.gpu_id), args.gpu_id))
+            print("-> GPU {} {} will be used.\n".format(torch.cuda.get_device_name(args.gpu_id), args.gpu_id))
         else:
             args.n_gpu = torch.cuda.device_count()
             gpu_ids = list(range(0, args.n_gpu))
             if args.n_gpu > 1:
                 model = torch.nn.DataParallel(model, device_ids=gpu_ids, output_device=gpu_ids[-1])
-            print("  - GPU(s) {} will be used.".format(str(gpu_ids)))
+            print("-> GPU(s) {} will be used\n".format(str(gpu_ids)))
         args.device = torch.device("cuda")
     else:
         args.device = torch.device("cpu")
         args.n_gpu = 0
-        print("  - No GPU available, using the CPU instead.")
-    model.to(args.device)
+        print("-> No GPU available, using the CPU instead.\n")
+    model.to(args.device)  # Tell pytorch to run the model on the device.
     
     # Set the seed value all over the place to make this reproducible.
     set_seed(args.seed)
@@ -713,7 +691,7 @@ def main(args):
     
     print("\n========================================")
     print('                  DATA                    ')
-    print("========================================")
+    print("========================================\n")
     print("Loading data...")
     classes_of_interest = ['Data Sheets',
                             'Configuration (Guides, Examples & TechNotes)',
@@ -735,50 +713,58 @@ def main(args):
     
     print("Splitting dataset...")
     dataset = (tokenized, class_ids, attention_masks, sentences)
-    train_set, val_set, test_set = split_data(args, dataset)
-    print("  - Samples in train set: {}".format(len(train_set[0])))
-    print("  - Samples in val set: {}".format(len(val_set[0])))
-    print("  - Samples in test set: {}".format(len(test_set[0])))
     
     
     if args.do_train:
         print("\n========================================")
-        print('               TRAINING                   ')
-        print("========================================")
-        model = train(args, model, tokenizer, categories, train_set, val_set)
+        print('            Launching training            ')
+        print("========================================\n")
+        model = train(args, model, tokenizer, dataset, categories)
         
-    if args.do_test:
+        # Hard-coded evaluation after training (temporary because loading fine-tuned model gives weird results)
+        evaluate_bert_preds(args, model, tokenizer, categories)
+        
+        # NB: For unknown reason, saving the fine-tuned model, then loading it
+        # and running an evaluation on the same test file leads to accuracy of
+        # 0.17 while it was 0.88 after training. I suspect the BertForSequenceClassification
+        # model not to save properly all its parameters (maybe juste loading the weights of
+        # BERT and not the classifier MLP above).
+    else:
         print("\n========================================")
-        print('                TESTING                   ')
-        print("========================================")   
-        print("Evaluation on entire test set...")
-        result, df_wrong, df_right = evaluate(args, model, categories, test_set)
-        plot_confusion_matrix(result['conf_matrix'], categories, args.output_dir)
-        df_wrong.to_csv(os.path.join(args.output_dir, 'preds_wrong.csv'))
-        df_right.to_csv(os.path.join(args.output_dir, 'preds_right.csv'))
-        with open(os.path.join(args.output_dir, 'test_set_scores.json'), 'w+') as f:
-            json.dump(result, f)
-        print("  * Accuracy: {0:.6f}".format(result['Accuracy']))
-        print("  * MCC: {0:.6f}".format(result['MCC']))
-        print("  Macro Average")
-        print("  * Recall: {0:.6f}".format(result['Macro_Average']['Recall']))
-        print("  * Precision: {0:.6f}".format(result['Macro_Average']['Precision']))
-        print("  * F1 score: {0:.6f}".format(result['Macro_Average']['F1']))
-        print("  Weighted Average")
-        print("  * Recall: {0:.6f}".format(result['Weighted_Average']['Recall']))
-        print("  * Precision: {0:.6f}".format(result['Weighted_Average']['Precision']))
-        print("  * F1 score: {0:.6f}".format(result['Weighted_Average']['F1']))
+        print('      Launching bootstrap testing         ')
+        print("========================================\n")
+        macro_recalls = []
+        macro_precisions = []
+        macro_f1s = []
+        weighted_recalls = []
+        weighted_precisions = []
+        weighted_f1s = []
+        mccs = []
+        accuracies = []
         
-        print("Evaluation on bootstrap samples from test set...")
-        stats = bootstrap_evaluation(args, model, categories, test_set, 100)
-        with open(os.path.join(args.output_dir, 'bootstrap_scores.json'), 'w+') as f:
-            json.dump(stats, f)
+        _, test_dataset = split_data(args, dataset)
+        for i in range(10):
+            test_tokenized, test_class_ids, test_attention_masks, test_sentences = test_dataset
+            sample_tokenized, sample_class_ids, sample_attention_masks, sample_sentences = resample(test_tokenized,
+                                                                                                    test_class_ids,
+                                                                                                    test_attention_masks,
+                                                                                                    test_sentences,
+                                                                                                    replace=True)
+            bootstrapped_sample = (sample_tokenized, sample_class_ids, sample_attention_masks, sample_sentences)
+            result, _, _ = evaluate(args, model, bootstrapped_sample, categories)
             
-        if args.do_compare:
-            print("Evaluation on BERT predictions...")
-            evaluate_bert_preds(args, model, tokenizer, categories)
-            
-
+            macro_recalls.append(result['Macro_Average']['Recall'])
+            macro_precisions.append(result['Macro_Average']['Precision'])
+            macro_f1s.append(result['Macro_Average']['F1'])
+            weighted_recalls.append(result['Weighted_Average']['Recall'])
+            weighted_precisions.append(result['Weighted_Average']['Precision'])
+            weighted_f1s.append(result['Weighted_Average']['F1'])
+            mccs.append(result['MCC'])
+            accuracies.append(result['Accuracy'])
+        
+        
+        
+    
 if __name__=="__main__":
     args = parse_arguments()
     main(args)
