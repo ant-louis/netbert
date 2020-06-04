@@ -613,23 +613,36 @@ def bootstrap_evaluation(args, model, categories, test_set, iters):
     
     # Compute stats.
     stats['macro-recall']['mean'] = statistics.mean(macro_recalls)
-    stats['macro-recall']['var'] = statistics.variance(macro_recalls)
+    stats['macro-recall']['std'] = statistics.pstdev(macro_recalls)
+    stats['macro-recall']['var'] = statistics.pvariance(macro_recalls)
+    
     stats['macro-precision']['mean'] = statistics.mean(macro_precisions)
-    stats['macro-precision']['var'] = statistics.variance(macro_precisions)
+    stats['macro-precision']['std'] = statistics.pstdev(macro_precisions)
+    stats['macro-precision']['var'] = statistics.pvariance(macro_precisions)
+    
     stats['macro-f1']['mean'] = statistics.mean(macro_f1s)
-    stats['macro-f1']['var'] = statistics.variance(macro_f1s)
+    stats['macro-f1']['std'] = statistics.pstdev(macro_f1s)
+    stats['macro-f1']['var'] = statistics.pvariance(macro_f1s)
     
     stats['weighted-recall']['mean'] = statistics.mean(weighted_recalls)
-    stats['weighted-recall']['var'] = statistics.variance(weighted_recalls)
+    stats['weighted-recall']['std'] = statistics.pstdev(weighted_recalls)
+    stats['weighted-recall']['var'] = statistics.pvariance(weighted_recalls)
+    
     stats['weighted-precision']['mean'] = statistics.mean(weighted_precisions)
-    stats['weighted-precision']['var'] = statistics.variance(weighted_precisions)
+    stats['weighted-precision']['std'] = statistics.pstdev(weighted_precisions)
+    stats['weighted-precision']['var'] = statistics.pvariance(weighted_precisions)
+    
     stats['weighted-f1']['mean'] = statistics.mean(weighted_f1s)
-    stats['weighted-f1']['var'] = statistics.variance(weighted_f1s)
+    stats['weighted-f1']['std'] = statistics.pstdev(weighted_f1s)
+    stats['weighted-f1']['var'] = statistics.pvariance(weighted_f1s)
     
     stats['mcc']['mean'] = statistics.mean(mccs)
-    stats['mcc']['var'] = statistics.variance(mccs)
+    stats['mcc']['std'] = statistics.pstdev(mccs)
+    stats['mcc']['var'] = statistics.pvariance(mccs)
+    
     stats['accuracy']['mean'] = statistics.mean(accuracies)
-    stats['accuracy']['var'] = statistics.variance(accuracies)
+    stats['accuracy']['std'] = statistics.pstdev(accuracies)
+    stats['accuracy']['var'] = statistics.pvariance(accuracies)
     
     return stats
 
