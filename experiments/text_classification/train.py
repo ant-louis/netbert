@@ -8,6 +8,7 @@ import os
 import itertools
 import statistics
 from tqdm import tqdm
+from collections import Counter
 
 import pandas as pd
 import numpy as np
@@ -750,8 +751,20 @@ def main(args):
     dataset = (tokenized, class_ids, attention_masks, sentences)
     train_set, val_set, test_set = split_data(args, dataset)
     print("  - Samples in train set: {}".format(len(train_set[0])))
+    train_ids = Counter(train_set[1]).keys()
+    train_ids_freq = Counter(train_set[1]).values()
+    for i, freq in zip(train_ids, train_ids_freq):
+        print("     * {} : {}".format(i, freq))
     print("  - Samples in val set: {}".format(len(val_set[0])))
+    val_ids = Counter(val_set[1]).keys()
+    val_ids_freq = Counter(val_set[1]).values()
+    for i, freq in zip(val_ids, val_ids_freq):
+        print("     * {} : {}".format(i, freq))
     print("  - Samples in test set: {}".format(len(test_set[0])))
+    test_ids = Counter(test_set[1]).keys()
+    test_ids_freq = Counter(test_set[1]).values()
+    for i, freq in zip(test_ids, test_ids_freq):
+        print("     * {} : {}".format(i, freq))
     
     
     if args.do_train:
