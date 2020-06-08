@@ -30,7 +30,7 @@ search/rfc/docker/_models/*
 pretraining/-/bert_singleGPU/pretraining_output_fullfat/*
 pretraining/-/bert_singleGPU/pretraining_output_megafat/*
 experiments/text_classification/output/*
-experiments/named_entity_recognition/output/*
+experiments/-/named_entity_recognition/output/*
 
 #----------------
 # Cache
@@ -43,5 +43,5 @@ _cache/*
 # Tensorboard runs
 #------------------
 #_runs/*
-#experiments/named_entity_recognition/runs/*
+experiments/-/named_entity_recognition/runs/*
 #experiments/text_classification/runs/*
