@@ -1,28 +1,21 @@
 # NetBERT: A Pre-trained Language Representation Model for Computer Networking
 
-This repository provides the code for pre-training and fine-tuning NetBERT, a computer networking language representation model designed for networking text mining tasks. 
+Obtaining accurate information about products in a fast and efficient way is becoming increasingly important at Cisco as the related documentation rapidly grows. Thanks to recent progress in natural language processing (NLP), extracting valuable information from general domain documents has gained in popularity, and deep learning has boosted the development of effective text mining systems. However, directly applying the advancements in NLP to domain-specific documentation might yield unsatisfactory results due to a word distribution shift from general domain language to domain-specific language. Hence, this work aims to determine if a large language model pre-trained on domain-specific (computer networking) text corpora improves performance over the same model pre-trained exclusively on general domain text, when evaluated on in-domain text mining tasks.
+
+To this end, we introduce NetBERT (Bidirectional Encoder Representations from Transform-ers for Computer Networking), a domain-specific language representation model based on BERT (Devlin et al., 2018) and pre-trained on large-scale computer networking corpora. Through several extrinsic and intrinsic evaluations, we compare the performance of our novel model against the general-domain BERT. We demonstrate clear improvements over BERT on the following two representative text mining tasks: networking text classification (0.9% F1 improvement) and networking information retrieval (12.3% improvement on a custom retrieval score). Additional experiments on word similarity and word analogy tend to show that NetBERT capture more meaningful semantic properties and relations between networking concepts than BERT does. We conclude that pre-training BERT on computer networking corpora helps it understand more accurately domain-related text.
 
 ## Table of contents
-1. [Motivation](#motivation)
-2. [Datasets](#datasets)
-3. [Pre-training](#pretraining)
-4. [Experiments](#experiments)
-    4.1. [Text Classification](#text_classification)
-    4.2. [Information Retrieval](#info_retrieval)
-    4.3. [Word Similarity](#word_similarity)
-    4.4. [Word Analogy](#word_analogy)
-5. [Search](#search)
-
-## 1. Motivation <a name="intro"></a>
-Text mining is becoming increasingly important at Cisco as the number of product documents becomes larger and larger. Being able to retrieve the right information in the sorthest time possible is crucial, as it would increase the productivity of Cisco's employees by taking away the tedious task of searching the information among long technical documents.
-
-While recent advancements in natural language processing (NLP) has allowed major improvements for various text mining tasks, applying them directly to Cisco documents often yields to unsatisfactory results due to a word distribution shift from general domain corpora to Cisco computer networking corpora. 
-
-Therefore, we introduce NetBERT, a domain-specific language representation model pre-trained on large-scale Cisco corpora.
+1. [Pre-training](#pretraining)
+2. [Experiments](#experiments)
+    1. [Text Classification](#text_classification)
+    2. [Information Retrieval](#info_retrieval)
+    3. [Word Similarity](#word_similarity)
+    4. [Word Analogy](#word_analogy)
+3. [Search](#search)
 
 
-## 2. Datasets <a name="datasets"></a>
-The original dataset used for pre-training BERT consists of all text content scrapped from [cisco.com](https://www.cisco.com/), resulting in about 30GB of uncleaned text data. This dataset is further preprocessed before training. The final dataset has the following properties:
+## 1. Pre-training <a name="pretraining"></a>
+The original dataset used for pre-training BERT consists of all text content scrapped from [cisco.com](https://www.cisco.com/), resulting in about 30GB of uncleaned text data. This dataset is further processed and cleaned before pre-training. The final dataset has the following properties:
 
 |         | Documents  | Sentences  | Words   | Chars | Size   |
 |---------|------------|------------|-------- |-------|--------|
@@ -30,9 +23,7 @@ The original dataset used for pre-training BERT consists of all text content scr
 |**Dev**  | 21.3K      | 8.8M       | 192.3M  | 1.2B  | 1.2GB  |
 |**Test** | 21.3K      | 8.4M       | 182.2M  | 1.1B  | 1.1GB  |
 
-
-## 3. Pre-training <a name="pretraining"></a>
-The pre-training of BERT is done using the [transformers](https://github.com/huggingface/transformers) library.
+The pre-training of BERT is done using the 🤗 [Transformers](https://github.com/huggingface/transformers) library.
 On 8 GPUs NVIDIA Tesla V100-SXM2 32GB, it takes about 36 hours to train the model over one epoch.
 
 *Currently training...*
