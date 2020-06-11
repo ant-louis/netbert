@@ -17,11 +17,15 @@ To this end, we introduce NetBERT (Bidirectional Encoder Representations from Tr
 ## 1. Pre-training <a name="pretraining"></a>
 The original dataset used for pre-training BERT consists of all text content scrapped from [cisco.com](https://www.cisco.com/), resulting in about 30GB of uncleaned text data. This dataset is further processed and cleaned before pre-training. The final dataset has the following properties:
 
+<center>
+    
 |         | Documents  | Sentences  | Words   | Chars | Size   |
 |---------|------------|------------|-------- |-------|--------|
 |**Train**| 383.9K     | 145.9M     | 3.1B    | 21.7B | 20.4GB |
 |**Dev**  | 21.3K      | 8.8M       | 192.3M  | 1.2B  | 1.2GB  |
 |**Test** | 21.3K      | 8.4M       | 182.2M  | 1.1B  | 1.1GB  |
+
+</center>
 
 The pre-training of BERT is done using the 🤗 [Transformers](https://github.com/huggingface/transformers) library.
 On 8 GPUs NVIDIA Tesla V100-SXM2 32GB, it takes about 36 hours to train the model over one epoch.
