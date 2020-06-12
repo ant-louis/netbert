@@ -42,6 +42,6 @@ _cache/*
 #-----------------
 # Tensorboard runs
 #------------------
-#_runs/*
+_runs/*
 experiments/-/named_entity_recognition/runs/*
-#experiments/text_classification/runs/*
+experiments/text_classification/runs/*
