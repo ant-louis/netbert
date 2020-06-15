@@ -15,7 +15,7 @@ To this end, we introduce NetBERT (Bidirectional Encoder Representations from Tr
 4. [Search](#search)
 
 
-## 1. Data Processing <a name="data_processing"></a>
+## 1. Data <a name="data"></a>
 The original dataset used for pre-training BERT consists of all text content scrapped from [cisco.com](https://www.cisco.com/), resulting in about 30GB of uncleaned text data. This dataset is further processed and cleaned before pre-training.
 
 The final dataset has the following properties:
