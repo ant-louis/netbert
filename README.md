@@ -15,22 +15,25 @@ To this end, we introduce NetBERT (Bidirectional Encoder Representations from Tr
 
 
 ## 1. Pre-training <a name="pretraining"></a>
-The original dataset used for pre-training BERT consists of all text content scrapped from [cisco.com](https://www.cisco.com/), resulting in about 30GB of uncleaned text data. This dataset is further processed and cleaned before pre-training. The final dataset has the following properties:
+The domain-specific corpus was collected by scraping all the text content from [cisco.com](https://www.cisco.com/), the Cisco confidential employee website. It resulted in about 30GB of uncleaned text, collected from 442,028 web pages in total. The pre-processing of the original corpus results in a cleaned dataset of about 170.7M sentences, for a total size of 22.7GB. This dataset is further split into train/validation/test sets with a ratio 90\%-5\%-5\% respectively.
 
 <center>
     
-|         | Documents  | Sentences  | Words   | Chars | Size   |
-|---------|------------|------------|-------- |-------|--------|
-|**Train**| 383.9K     | 145.9M     | 3.1B    | 21.7B | 20.4GB |
-|**Dev**  | 21.3K      | 8.8M       | 192.3M  | 1.2B  | 1.2GB  |
-|**Test** | 21.3K      | 8.4M       | 182.2M  | 1.1B  | 1.1GB  |
+|         | Sentences  | Words   | Data size |
+|---------|------------|---------|-----------|
+|**Train**| 145.9M     | 3.1B    | 20.4GB    |
+|**Val**  | 8.8M       | 192.3M  | 1.2GB     |
+|**Test** | 8.4M       | 182.2M  | 1.1GB     |
 
 </center>
 
-The pre-training of BERT is done using the 🤗 [Transformers](https://github.com/huggingface/transformers) library.
-On 8 GPUs NVIDIA Tesla V100-SXM2 32GB, it takes about 36 hours to train the model over one epoch.
+The model pre-training was performed on one machine with 8×32GB NVIDIA Tesla V100 GPUs and implemnted using the 🤗 [Transformers](https://github.com/huggingface/transformers) library.  The model trained continuously for 20 epochs (i.e., 1.9M training steps) which took a total of 29 days. The resulting perplexities are given below for BERT and NetBERT after 3, 12 and 20 epochs, respectively:
 
-*Currently training...*
+|           | BERT   | NetBERT-3 | NetBERT-12 | NetBERT-20 |
+|-----------|--------|-----------|------------|------------|
+| **Train** | 34.618 | 1.423     | 1.298      | 1.253      |
+| **Val**   | 34.674 | 1.420     | 1.302      | 1.258      |
+| **Test**  | 34.456 | 1.416     | 1.302      | 1.259      |
 
 
 ## 4. Experiments <a name="experiments"></a>
