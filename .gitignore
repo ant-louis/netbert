@@ -3,13 +3,13 @@
 #----------------
 _data/*
 *.csv
-experiments/intrinsic/exbert/server/data/dev/*
+experiments/intrinsic_evaluations/exbert/server/data/dev/*
 
 #----------------
 # Weird stuff
 #---------------
-.ipynb_checkpoints
-.DS_Store
+*.ipynb_checkpoints
+*.DS_Store
 __pycache__
 *.pyc
 *.tar.gz
@@ -42,6 +42,5 @@ _cache/*
 #-----------------
 # Tensorboard runs
 #------------------
-_runs/*
 experiments/-/named_entity_recognition/runs/*
-experiments/text_classification/runs/*
+#experiments/text_classification/runs/*
