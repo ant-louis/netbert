@@ -21,7 +21,7 @@ __pycache__
 pretraining/-/bert_singleGPU/models/*
 pretraining/-/bert_multiGPU/MegatronLM/model_checkpoints/*
 _models/*
-search/rfc/docker/_models/*
+search/rfc/webapp/models/*
 
 
 #-------------------

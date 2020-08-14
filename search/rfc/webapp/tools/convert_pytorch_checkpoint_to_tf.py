@@ -133,5 +133,3 @@ def main(raw_args=None):
 
 if __name__ == "__main__":
     main()
-    
-# python convert_pytorch_checkpoint_to_tf.py --model_name=./output/netbert --pytorch_model_path=./output/netbert/pytorch_model.bin --tf_cache_dir=./output/netbert/tf-checkpoint/
