@@ -7,7 +7,7 @@ from bert_serving.client import BertClient
 
 
 SEARCH_SIZE = 10
-INDEX_NAME = "jobsearch" #INDEX_NAME = os.environ['INDEX_NAME']
+INDEX_NAME = "rfcsearch" #INDEX_NAME = os.environ['INDEX_NAME']
 
 
 app = Flask(__name__)

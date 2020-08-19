@@ -26,7 +26,7 @@ def load_dataset(path):
         series = row[1]
         doc = {
             'title': series.Title,
-            'text': series.Description
+            'text': series.Text
         }
         docs.append(doc)
     return docs
@@ -52,7 +52,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Creating elasticsearch documents.')
     parser.add_argument('--data', help='data for creating documents.')
-    parser.add_argument('--save', default='documents.jsonl', help='created documents.')
-    parser.add_argument('--index_name', default='jobsearch', help='Elasticsearch index name.')
+    parser.add_argument('--save', default='../../_data/documents.json', help='created documents.')
+    parser.add_argument('--index_name', default='rfcsearch', help='Elasticsearch index name.')
     args = parser.parse_args()
     main(args)

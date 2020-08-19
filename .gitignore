@@ -4,6 +4,7 @@
 _data/*
 *.csv
 experiments/intrinsic_evaluations/exbert/server/data/dev/*
+search/rfc/webapp/_data/*
 
 #----------------
 # Weird stuff
@@ -21,7 +22,7 @@ __pycache__
 pretraining/-/bert_singleGPU/models/*
 pretraining/-/bert_multiGPU/MegatronLM/model_checkpoints/*
 _models/*
-search/rfc/webapp/models/*
+search/rfc/webapp/_models/*
 
 
 #-------------------
