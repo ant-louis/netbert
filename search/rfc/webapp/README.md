@@ -38,7 +38,7 @@ tokenizer.save_pretrained("path/to/local/folder")
 
 Then, you need to convert the 🤗 model checkpoint to the checkpoint format from original [BERT](https://github.com/google-research/bert) repository:
 ```bash
-bash convert_pt_to_tf.sh $path/to/local/folder
+bash convert_model_checkpoint.sh $path/to/local/folder
 ```
 
 This will create a new *'tensorflow'* repository where you should change the file names that way in order for the docker containers to run properly:
@@ -60,6 +60,10 @@ sudo make install
 ```
 
 ### 2. Index creation
+Go into the *'index_creation'* repository:
+```bash
+cd index_creation/
+```
 
 #### Download RFC data
 ```bash
@@ -73,7 +77,7 @@ bash clean_data.sh $DATA_DIR
 
 #### Convert data in proper format
 ```bash
-bash
+bash convert_data_format.sh $DATA_DIR
 ```
 
 #### Create index
@@ -134,7 +138,7 @@ bash create_documents.sh $DATA_DIR $DATA_FILE
 
 After finishing the script, you get a JSON document as follows:
 
-```python
+```
 # documents.json
 {"_op_type": "index", "_index": "rfcsearch", "text": "lorem ipsum", "title": "lorem ipsum", "text_vector": [...]}
 {"_op_type": "index", "_index": "rfcsearch", "text": "lorem ipsum", "title": "lorem ipsum", "text_vector": [...]}
