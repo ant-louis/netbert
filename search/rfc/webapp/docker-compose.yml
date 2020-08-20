@@ -44,9 +44,9 @@ services:
       - "5555:5555"
       - "5556:5556"
     environment:
-      - PATH_MODEL=./models/base_cased
+      - PATH_MODEL=./_models/bert
     volumes:
-      - "./models/base_cased:/model"
+      - "./_models/bert:/model"
     networks:
       - shared-network
 
