@@ -1,7 +1,7 @@
 #!/bin/sh
 
-export DIR=/raid/antoloui/Master-thesis/search/rfc/webapp/_data/
-export FILE=example.csv
+export DIR=$1 #/raid/antoloui/Master-thesis/search/rfc/webapp/_data/
+export FILE=$2 #example.csv
 export NAME=rfcsearch
  
 python -W ignore -u tools/create_documents.py \

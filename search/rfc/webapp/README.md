@@ -52,18 +52,32 @@ Finally, set the following environnement variable with the path of the folder co
 export PATH_MODEL=$path/to/local/folder/tensorflow
 ```
 
-
-### 2. Deployment
 ####  Launch the Docker containers
 In order to run the containers, run the following command:
 ```bash
 sudo make install
+
 ```
 
-### Create index
+### 2. Index creation
 
+#### Download RFC data
+```bash
+bash download_data.sh $OUT_DIR
+```
+
+#### Clean and process data
+```bash
+bash clean_data.sh $DATA_DIR
+```
+
+#### Convert data in proper format
+```bash
+bash
+```
+
+#### Create index
 You can use the create index API to add a new index to an Elasticsearch cluster. When creating an index, you can specify the following:
-
 * Settings for the index
 * Mappings for fields in the index
 * Index aliases
@@ -103,14 +117,13 @@ $ bash create_index.sh
 *NB*: The `dims` value of `text_vector` must need to match the dims of a pretrained BERT model.
 
 
-### Create documents
-
+#### Create documents
 Once you created an index, you’re ready to index some document. The point here is to convert your document into a vector using BERT. The resulting vector is stored in the `text_vector` field. Let`s convert your data into a JSON document:
 
 ```bash
-bash create_documents.sh
+bash create_documents.sh $DATA_DIR $DATA_FILE
 
-# example/example.csv
+# $DATA_FILE=data/example.csv
 "Title","Text"
 "rfc1 - Host Software","Somewhat independently, Gerard DeLoche of UCLA has been working on the HOST-IMP interface."
 "rfc153 - SRI ARC-NIC status","The specifications of DEL are under discussion. The following diagrams show the sequence of actions."
@@ -128,3 +141,12 @@ After finishing the script, you get a JSON document as follows:
 {"_op_type": "index", "_index": "rfcsearch", "text": "lorem ipsum", "title": "lorem ipsum", "text_vector": [...]}
 ...
 ```
+
+#### Index documents
+After converting your data into a JSON, you can adds a JSON document to the specified index and makes it searchable:
+```bash
+bash index_documents.sh $DATA_DIR
+```
+
+#### Open browser
+Go to http://127.0.0.1:5000.

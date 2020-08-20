@@ -21,6 +21,6 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Indexing elasticsearch documents.')
-    parser.add_argument('--data', default='documents.jsonl', help='Elasticsearch documents.')
+    parser.add_argument('--data', default='documents.json', help='Elasticsearch documents.')
     args = parser.parse_args()
     main(args)
