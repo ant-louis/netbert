@@ -36,6 +36,18 @@ model.save_pretrained("path/to/local/folder")
 tokenizer.save_pretrained("path/to/local/folder")
 ```
 
+Then, you need to convert the 🤗 model checkpoint to the checkpoint format from original [BERT](https://github.com/google-research/bert) repository:
+```bash
+bash convert_pt_to_tf.sh $path/to/local/folder
+```
+
+This will create a new *'tensorflow'* repository where you should change the file names that way in order for the docker containers to run properly:
+    - *netbert_config.json* -> *bert_config.json*
+    - *netbert.ckpt.data-00000-of-00001* -> *bert_model.ckpt.data-00000-of-00001*
+    - *netbert.ckpt.index* -> *bert_model.ckpt.index*
+    - *netbert.ckpt.meta* -> *bert_model.ckpt.meta*
+
+
 
 ### 2. Deployment
 ####  Launch the Docker containers

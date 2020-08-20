@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export DIR=/raid/antoloui/THESIS/Master-thesis/_models/netbert
+export DIR=$1 #/raid/antoloui/THESIS/Master-thesis/_models/netbert
  
 python -W ignore -u tools/convert_pytorch_checkpoint_to_tf.py \
     --model_name $DIR \
