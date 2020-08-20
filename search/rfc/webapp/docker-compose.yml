@@ -44,9 +44,9 @@ services:
       - "5555:5555"
       - "5556:5556"
     environment:
-      - PATH_MODEL=./_models/bert
+      - PATH_MODEL=./_models/netbert
     volumes:
-      - "./_models/bert:/model"
+      - "./_models/netbert:/model"
     networks:
       - shared-network
 
