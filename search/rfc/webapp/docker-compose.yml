@@ -44,9 +44,9 @@ services:
       - "5555:5555"
       - "5556:5556"
     environment:
-      - PATH_MODEL=./_models/netbert
+      - PATH_MODEL=${PATH_MODEL} #./_models/netbert
     volumes:
-      - "./_models/netbert:/model"
+      - "${PATH_MODEL}:/model"
     networks:
       - shared-network
 

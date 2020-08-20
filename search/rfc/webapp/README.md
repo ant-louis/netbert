@@ -42,11 +42,15 @@ bash convert_pt_to_tf.sh $path/to/local/folder
 ```
 
 This will create a new *'tensorflow'* repository where you should change the file names that way in order for the docker containers to run properly:
-    - *netbert_config.json* -> *bert_config.json*
-    - *netbert.ckpt.data-00000-of-00001* -> *bert_model.ckpt.data-00000-of-00001*
-    - *netbert.ckpt.index* -> *bert_model.ckpt.index*
-    - *netbert.ckpt.meta* -> *bert_model.ckpt.meta*
+- *netbert_config.json* -> *bert_config.json*
+- *netbert.ckpt.data-00000-of-00001* -> *bert_model.ckpt.data-00000-of-00001*
+- *netbert.ckpt.index* -> *bert_model.ckpt.index*
+- *netbert.ckpt.meta* -> *bert_model.ckpt.meta*
 
+Finally, set the following environnement variable with the path of the folder containing the convert NetBERT checkpoint:
+```
+export PATH_MODEL=$path/to/local/folder/tensorflow
+```
 
 
 ### 2. Deployment

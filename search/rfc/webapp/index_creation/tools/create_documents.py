@@ -6,7 +6,7 @@ import json
 
 import pandas as pd
 from bert_serving.client import BertClient
-bc = BertClient(output_fmt='list')
+bc = BertClient(output_fmt='list', check_version=False)
 
 
 def create_document(doc, emb, index_name):
@@ -43,7 +43,7 @@ def bulk_predict(docs, batch_size=256):
 
 def main(args):
     docs = load_dataset(args.data)
-    with open(args.save, 'w') as f:
+    with open(args.save, 'w+') as f:
         for doc, emb in zip(docs, bulk_predict(docs)):
             d = create_document(doc, emb, args.index_name)
             f.write(json.dumps(d) + '\n')
@@ -52,7 +52,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Creating elasticsearch documents.')
     parser.add_argument('--data', help='data for creating documents.')
-    parser.add_argument('--save', default='../../_data/documents.json', help='created documents.')
+    parser.add_argument('--save', help='created documents.')
     parser.add_argument('--index_name', default='rfcsearch', help='Elasticsearch index name.')
     args = parser.parse_args()
     main(args)
