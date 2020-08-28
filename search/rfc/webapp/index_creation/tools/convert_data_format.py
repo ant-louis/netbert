@@ -49,6 +49,9 @@ def main(args):
         # Concat to global one.
         global_df = pd.concat([global_df, df], axis=0)
         
+    # Convert all dataframe to strings.
+    global_df = global_df.astype(str)
+        
     # Save global dataframe.
     global_df.to_csv(args.data_dir + '../data.csv', sep=',', encoding='utf-8', float_format='%.10f', decimal='.')
     return

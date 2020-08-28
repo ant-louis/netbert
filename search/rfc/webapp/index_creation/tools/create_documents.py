@@ -1,10 +1,13 @@
 """
 Example script to create elasticsearch documents.
 """
-import argparse
 import json
+import time
+import argparse
 
+from tqdm import tqdm
 import pandas as pd
+
 from bert_serving.client import BertClient
 bc = BertClient(output_fmt='list', check_version=False)
 
@@ -21,8 +24,8 @@ def create_document(doc, emb, index_name):
 
 def load_dataset(path):
     docs = []
-    df = pd.read_csv(path)
-    for row in df.iterrows():
+    df = pd.read_csv(path, dtype=str)
+    for row in tqdm(df.iterrows(), total=df.shape[0]):
         series = row[1]
         doc = {
             'title': series.Title,
@@ -36,15 +39,17 @@ def bulk_predict(docs, batch_size=256):
     """Predict bert embeddings."""
     for i in range(0, len(docs), batch_size):
         batch_docs = docs[i: i+batch_size]
-        embeddings = bc.encode([doc['text'] for doc in batch_docs])
+        embeddings = bc.encode([str(doc['text']) for doc in batch_docs])
         for emb in embeddings:
             yield emb
 
 
 def main(args):
+    print("Loading dataset...")
     docs = load_dataset(args.data)
     with open(args.save, 'w+') as f:
-        for doc, emb in zip(docs, bulk_predict(docs)):
+        print("Encoding dataset...")
+        for doc, emb in tqdm(zip(docs, bulk_predict(docs)), total=len(docs)):
             d = create_document(doc, emb, args.index_name)
             f.write(json.dumps(d) + '\n')
 

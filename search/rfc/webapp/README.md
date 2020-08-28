@@ -55,8 +55,7 @@ export PATH_MODEL=$path/to/local/folder/tensorflow
 ####  Launch the Docker containers
 In order to run the containers, run the following command:
 ```bash
-sudo make install
-
+make install
 ```
 
 ### 2. Index creation
@@ -153,4 +152,4 @@ bash index_documents.sh $DATA_DIR
 ```
 
 #### Open browser
-Go to http://127.0.0.1:5000.
+Go to http://127.0.0.1:5000. 
