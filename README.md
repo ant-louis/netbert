@@ -55,14 +55,14 @@ The resulting *perplexities* are given below for BERT and NetBERT after 3, 12 an
 ### 3. Experiments <a name="experiments"></a>
 
 #### Text Classification <a name="text_classification"></a>
-*Coming up...*
+[*coming up...*]
 
 #### Information Retrieval <a name="info_retrieval"></a>
-*Coming up...*
+[*coming up...*]
 
 #### Word Similarity <a name="word_similarity"></a>
-*Coming up...*
+[*coming up...*]
 
 #### Word Analogy <a name="word_analogy"></a>
-*Coming up...*
+[*coming up...*]
 
