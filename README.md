@@ -10,9 +10,9 @@ Additional experiments on *Word Similarity* and *Word Analogy* tend to show that
 ## Table of contents
 1. [Using NetBERT](#using_netbert)
 2. [Pre-training](#pretraining)
-    2.1. [Data](#data)
-    2.2. [Hardware and Schedule](#hardware)
-    2.3. [Results](#results)
+    1. [Data](#data)
+    2. [Hardware and Schedule](#hardware)
+    3. [Results](#results)
 3. [Experiments](#experiments)
     1. [Text Classification](#text_classification)
     2. [Information Retrieval](#info_retrieval)
@@ -38,13 +38,13 @@ tokenizer = BertTokenizer.from_pretrained("antoiloui/netbert")
 ### 2. Pre-training <a name="pretraining"></a>
 
 #### 2.1. Data <a name="data"></a>
-The *computer networking* corpus was collected by scraping all the text content from [cisco.com](https://www.cisco.com/). It resulted in about 30GB of uncleaned text, collected from **442,028 web pages** in total. The pre-processing of the original corpus results in a cleaned dataset of about **170.7M sentences**, for a total size of **22.7GB**. For confidentiality reasons, this data is not shared.
+The *computer networking* corpus was collected by scraping all the text content from [cisco.com](https://www.cisco.com/). It resulted in about 30GB of uncleaned text, collected from **442,028** web pages in total. The pre-processing of the original corpus results in a cleaned dataset of about **170.7M** sentences, for a total size of **22.7**GB. For confidentiality reasons, this data is not shared.
 
 #### 2.2. Hardware and Schedule <a name="hardware"></a>
-The model pre-training was performed on one machine with **8×32GB NVIDIA Tesla V100 GPUs**. The model trained continuously for **20 epochs** (i.e., 1.9M training steps) which took a total of **29 days**.
+The model pre-training was performed on one machine with **8×32**GB NVIDIA Tesla V100 GPUs. The model trained continuously for **20** epochs (i.e., 1.9M training steps) which took a total of **29** days.
 
 #### 2.3. Results <a name="results"></a>
-The resulting **perplexities** are given below for BERT and NetBERT after 3, 12 and 20 epochs, respectively:
+The resulting *perplexities* are given below for BERT and NetBERT after 3, 12 and 20 epochs, respectively:
 
 
 |           | BERT   | NetBERT-3 | NetBERT-12 | NetBERT-20 |
