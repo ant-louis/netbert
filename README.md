@@ -19,9 +19,6 @@ Additional experiments on *Word Similarity* and *Word Analogy* tend to show that
     2. [Information Retrieval](#info_retrieval)
     3. [Word Similarity](#word_similarity)
     4. [Word Analogy](#word_analogy)
-4. [Search](#search)
-
-
 
 
 ### 1. Using NetBERT <a name="using_netbert"></a>
