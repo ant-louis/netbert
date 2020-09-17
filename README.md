@@ -6,7 +6,7 @@
 - Computer Networking *Text Classification* (0.9% F1 improvement);
 - Computer Networking *Information Retrieval* (12.3% improvement on a custom retrieval score).
 
-Additional experiments on *Word Similarity* and *Word Analogy* tend to show that NetBERT capture more meaningful semantic properties and relations between networking concepts than BERT does. For more information, check my thesis [here](https://matheo.uliege.be/handle/2268.2/9060).
+Additional experiments on *Word Similarity* and *Word Analogy* tend to show that NetBERT capture more meaningful semantic properties and relations between networking concepts than BERT does. For more information, you cand [download](https://matheo.uliege.be/bitstream/2268.2/9060/7/Antoine_Louis_Thesis.pdf) my thesis.
 
 ## Table of contents
 1. [Using NetBERT](#using_netbert)
