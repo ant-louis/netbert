@@ -23,7 +23,7 @@ Additional experiments on *Word Similarity* and *Word Analogy* tend to show that
 
 
 
-## 1. Using NetBERT <a name="using_netbert"></a>
+### 1. Using NetBERT <a name="using_netbert"></a>
 You can use NetBERT with [🤗 transformers](https://github.com/huggingface/transformers) library as follows:
 
 ```python
@@ -35,15 +35,15 @@ model = BertForMaskedLM.from_pretrained("antoiloui/netbert")
 tokenizer = BertTokenizer.from_pretrained("antoiloui/netbert")
 ```
 
-## 2. Pre-training <a name="pretraining"></a>
+### 2. Pre-training <a name="pretraining"></a>
 
-### 2.1. Data <a name="data"></a>
+#### 2.1. Data <a name="data"></a>
 The domain-specific corpus was collected by scraping all the text content from [cisco.com](https://www.cisco.com/). It resulted in about 30GB of uncleaned text, collected from 442,028 web pages in total. The pre-processing of the original corpus results in a cleaned dataset of about 170.7M sentences, for a total size of 22.7GB. For confidentiality reasons, this data is not shared.
 
-### 2.2. Hardware and Schedule <a name="hardware"></a>
+#### 2.2. Hardware and Schedule <a name="hardware"></a>
 The model pre-training was performed on one machine with 8×32GB NVIDIA Tesla V100 GPUs. The model trained continuously for 20 epochs (i.e., 1.9M training steps) which took a total of 29 days.
 
-### 2.3. Results <a name="results"></a>
+#### 2.3. Results <a name="results"></a>
 The resulting perplexities are given below for BERT and NetBERT after 3, 12 and 20 epochs, respectively:
 
 
@@ -54,17 +54,17 @@ The resulting perplexities are given below for BERT and NetBERT after 3, 12 and 
 | **Test**  | 34.456 | 1.416     | 1.302      | 1.259      |
 
 
-## 3. Experiments <a name="experiments"></a>
+### 3. Experiments <a name="experiments"></a>
 
-### Text Classification <a name="text_classification"></a>
+#### Text Classification <a name="text_classification"></a>
 *Coming up...*
 
-### Information Retrieval <a name="info_retrieval"></a>
+#### Information Retrieval <a name="info_retrieval"></a>
 *Coming up...*
 
-### Word Similarity <a name="word_similarity"></a>
+#### Word Similarity <a name="word_similarity"></a>
 *Coming up...*
 
-### Word Analogy <a name="word_analogy"></a>
+#### Word Analogy <a name="word_analogy"></a>
 *Coming up...*
 
