@@ -1,4 +1,4 @@
-# Elasticsearch meets NetBERT
+# RFC Search Engine
 
 ## System architecture
 
@@ -23,13 +23,13 @@ pip install -r requirements.txt
 ```
 
 #### Download pre-trained NetBERT model
-You can download a pre-trained NetBERT model with [🤗 Transformers](https://github.com/huggingface/transformers) as follows:
+You can download the pre-trained NetBERT model with [🤗 transformers](https://github.com/huggingface/transformers) as follows:
 ```
 from transformers import AutoTokenizer, AutoModel
 
 # Load model.
-tokenizer = AutoTokenizer.from_pretrained("namespace/awesome-name-you-picked")
-model = AutoModel.from_pretrained("namespace/awesome-name-you-picked")
+tokenizer = AutoTokenizer.from_pretrained("antoiloui/netbert")
+model = AutoModel.from_pretrained("antoiloui/netbert")
 
 # Save it.
 model.save_pretrained("path/to/local/folder")
