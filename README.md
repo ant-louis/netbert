@@ -55,7 +55,23 @@ The resulting *perplexities* are given below for BERT and NetBERT after 3, 12 an
 ### 3. Experiments <a name="experiments"></a>
 
 #### Text Classification <a name="text_classification"></a>
-[*coming up...*]
+This task aims at comparing the quality of both BERT and NetBERT embeddings by fine-tuning both models on a *computer networking* sentence classification task. Intuitively, if one model is able to predict the class of a sentence better than the other, it means that the word representations that have been learned by the former model capture a more accurate meaning of that sentence than those learned by the other model.
+
+#### Dataset
+The dataset used in this experiment was collected by the Cisco One Search team in San Jose, California. They gathered a set of actual search queries from Cisco employees, and labeled them with the type of document in which the information being sought was found. In total, the dataset contains about **48,000** queries labeled with seven different document types (e.g., "Configuration", "Data sheets", etc). The dataset was randomly split into train (80%), validation (10%) and test
+(10%) sets.
+
+#### Results
+After finding the optimal hyperparameters (i.e., batch size, learning rate and number of epochs) on the validation set, both BERT and NetBERT were eventually fine-tuned on the train and validation sets, and evaluated on the test set. In order to report some notion of variability on the computed metrics, both models were
+evaluated on 100 bootstrapped samples drawn from the test set (of the same size as the latter). The mean values as well as the standard deviations are summarized (in percent) in the following table:
+
+| Metrics   | BERT       | NetBERT        |
+|-----------|------------|----------------|
+| MCC       | 88.3 (0.6) | **89.6** (0.6) |
+| Accuracy  | 93.4 (0.3) | **94.1** (0.3) |
+| F1        | 91.7 (0.5) | **92.1** (0.5) |
+| Precision | 90.2 (0.7) | **91.6** (0.6) |
+| Recall    | 90.9 (0.5) | **91.8** (0.5) |
 
 #### Information Retrieval <a name="info_retrieval"></a>
 [*coming up...*]
