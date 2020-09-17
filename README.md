@@ -3,8 +3,8 @@
 # NetBERT
 
 **NetBERT** is a "small" BERT model pre-trained on a huge corpus of *computer networking* text (~23Gb). NetBERT demonstrate clear improvements over BERT on the following two representative text mining tasks: 
-- *Computer Networking Text Classification* (0.9% F1 improvement);
-- *Computer Networking information retrieval* (12.3% improvement on a custom retrieval score).
+- Computer Networking *Text Classification* (0.9% F1 improvement);
+- Computer Networking *Information Retrieval* (12.3% improvement on a custom retrieval score).
 
 Additional experiments on *Word Similarity* and *Word Analogy* tend to show that NetBERT capture more meaningful semantic properties and relations between networking concepts than BERT does.
 
