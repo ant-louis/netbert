@@ -38,13 +38,13 @@ tokenizer = BertTokenizer.from_pretrained("antoiloui/netbert")
 ### 2. Pre-training <a name="pretraining"></a>
 
 #### 2.1. Data <a name="data"></a>
-The domain-specific corpus was collected by scraping all the text content from [cisco.com](https://www.cisco.com/). It resulted in about 30GB of uncleaned text, collected from 442,028 web pages in total. The pre-processing of the original corpus results in a cleaned dataset of about 170.7M sentences, for a total size of 22.7GB. For confidentiality reasons, this data is not shared.
+The *computer networking* corpus was collected by scraping all the text content from [cisco.com](https://www.cisco.com/). It resulted in about 30GB of uncleaned text, collected from **442,028 web pages** in total. The pre-processing of the original corpus results in a cleaned dataset of about **170.7M sentences**, for a total size of **22.7GB**. For confidentiality reasons, this data is not shared.
 
 #### 2.2. Hardware and Schedule <a name="hardware"></a>
-The model pre-training was performed on one machine with 8×32GB NVIDIA Tesla V100 GPUs. The model trained continuously for 20 epochs (i.e., 1.9M training steps) which took a total of 29 days.
+The model pre-training was performed on one machine with **8×32GB NVIDIA Tesla V100 GPUs**. The model trained continuously for **20 epochs** (i.e., 1.9M training steps) which took a total of **29 days**.
 
 #### 2.3. Results <a name="results"></a>
-The resulting perplexities are given below for BERT and NetBERT after 3, 12 and 20 epochs, respectively:
+The resulting **perplexities** are given below for BERT and NetBERT after 3, 12 and 20 epochs, respectively:
 
 
 |           | BERT   | NetBERT-3 | NetBERT-12 | NetBERT-20 |
