@@ -233,5 +233,3 @@ dependencies:
     - wasabi==0.6.0
     - wget==3.2
     - wordcloud==1.6.0
-prefix: netbert
-
