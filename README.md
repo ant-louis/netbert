@@ -2,7 +2,7 @@
 
 # NetBERT 📶
 
-**A BERT-base model pre-trained on a huge corpus of computer networking text (~23Gb)**.
+**A BERT model pre-trained on a huge corpus of computer networking text (~23Gb)**.
 
 ## Usage
 You can use NetBERT with [🤗 transformers](https://github.com/huggingface/transformers):
