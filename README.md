@@ -26,9 +26,11 @@ For attribution in academic contexts, please cite this work as:
 
 ```
 @mastersthesis{louis2020netbert,
-    title={NetBERT: A Pre-trained Language Representation Model for Computer Networking},
-    author={Louis, Antoine},
-    year={2020},
-    school={University of Liege}
+  author      = {Antoine Louis},
+  title       = {NetBERT: A Pre-trained Language Representation Model for Computer Networking},
+  school      = {University of Liège},
+  address     = {Liège, Belgium},
+  year        = {2020},
+  url         = {http://hdl.handle.net/2268.2/9060}
 }
 ```
